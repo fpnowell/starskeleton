@@ -38,18 +38,7 @@ function skel_from_statements(H::SimpleDiGraph, S::Vector{Any})
     return G
 end
 
-function generate_random_dag(n::Int, p::Float64)
-    G = SimpleDiGraph(n)
-    for i in 1:n
-        for j in (i+1):n
-            # Add directed edge from i to j with probability p
-            if rand() < p
-                add_edge!(G, i, j)
-            end
-        end
-    end
-    return G
-end
+
 
 #TODO: there has to be a more efficient way of doing this
 function get_skeleton(H::SimpleDiGraph)
