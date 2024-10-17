@@ -11,5 +11,8 @@ end
 cassio_statements = get_dsepstatements(cassio)
 
 cassio_dsepskeleton = dsep_skeleton(cassio)
+
+long_cassio = SimpleDigraph()
+
 #= dseporacle(1,3,[4,5],cassio)
 dseporacle(1,3,[4],cassio) =#
