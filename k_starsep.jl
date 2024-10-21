@@ -11,36 +11,36 @@ struct TaggedEdge
     passed_collider::Bool
 end
 
+
 # Function to perform the star reachability search
 function star_reachability(
     D::SimpleDiGraph,
     illegal_edges::Vector{Tuple{Edge, Edge}},
     J::Vector{Int64}
 )
-    R = Int64[]
+    R = Set(Int64[])
     frontier = TaggedEdge[]
     next_frontier = TaggedEdge[]
     visited = TaggedEdge[]
 
     D_prime = copy(D)
+    original_nv = nv(D)
     # 1. Add a dummy vertex for each node j in J
     for i in 1:length(J)
         add_vertex!(D_prime)
-        add_edge!(D_prime, nv(D)+i, J[i])
-        push!(frontier, TaggedEdge(Edge(nv(D)+i, J[i]), false))
+        add_edge!(D_prime, original_nv +i, J[i])
+        push!(frontier, TaggedEdge(Edge(original_nv +i, J[i]), false))
 
         # Add to the reachability set
         push!(R, J[i])
         push!(R, nv(D)+i)
     end
-
-    # 2. Add reversed edges to D_prime
+   # 2. Add reversed edges to D_prime
     for s in vertices(D)
         for t in outneighbors(D, s)
             add_edge!(D_prime, t, s) # Add the flipped edge
         end
     end
-
     while true
         # 3. Expand the reachability set
         for tagged_edge in frontier
@@ -50,33 +50,27 @@ function star_reachability(
 
             push!(R, t)
 
-            # Check if it's a "s -> t" edge or "s <- t"
-            s_to_t = s > 0 ? has_edge(D, s, t) : true
+            # Check if it's a "s -> t" edge or "s <- t" in the original graph 
+            s_to_t = s < original_nv +1 ? has_edge(D, s, t) : true 
 
-            # Find all out-edges from t in D_prime
+            # Find all out-edges from t in D_prime (these are the neighbors of t in D)
             for f in outedges(D_prime, t)
                 _, u = f
 
                 u_to_t = has_edge(D, u, t)
-                t_is_collider = s > 0 ? (s_to_t && u_to_t) : false
+                t_is_collider = s < original_nv + 1 ? (s_to_t && u_to_t) : false
 
                 # If t is a collider and we've already passed a collider, skip
-                if t_is_collider && passed_collider
-                    continue
-                end
+                t_is_collider && passed_collider && continue
 
                 new_tagged_edge = TaggedEdge(Edge(t, u), passed_collider || t_is_collider)
 
                 # Skip if already visited
-                if new_tagged_edge in visited
-                    continue
-                end
+                new_tagged_edge in visited && continue 
 
                 # Skip if it's an illegal edge pair
-                if (e, Edge(t, u)) in illegal_edges
-                    continue
-                end
-
+                #FIXME: I don't think I'm ever getting here! What to do...
+                (e, Edge(t, u)) in illegal_edges && continue 
                 # Add to the next frontier
                 push!(next_frontier, new_tagged_edge)
             end
@@ -91,10 +85,21 @@ function star_reachability(
         end
 
         # Move to the next frontier
-        frontier = next_frontier
-        empty!(next_frontier)
+        frontier = copy(next_frontier)
+        next_frontier = TaggedEdge[]
     end
 end
+
+function outedges(D::SimpleDiGraph, t::Int64)
+    L = []
+    for edge in edges(D)
+        if src(edge) == t
+            push!(L, (t, dst(edge)))
+        end
+    end
+    return L 
+end 
+
 
 # Function to check for star-separation
 function star_separation(
@@ -102,19 +107,63 @@ function star_separation(
     J::Vector{Int64},
     L::Vector{Int64}
 )
-    # 1. Compute the descendants Vector
-    in_lists = Dict{Int64, Vector{Int64}}[]
-    for v in vertices(D)
-        in_lists[v] = inneighbors(D, v)
-    end
-
-    descendants = Int64[]
+    # 1. Compute the ancestors of L
+    L_ancestors = Int64[]
     for v in L
-        push!(descendants, v)
-        union!(descendants, in_lists[v])
+        union!(L_ancestors, ancestors(D,v))
     end
 
-    # 3a. Construct the illegal list of edges
+        # 3a. Construct the illegal list of edges
+    illegal_edges = Tuple{Edge, Edge}[]
+    for s in vertices(D)
+        for t in outneighbors(D, s)
+            # Handle all (outgoing) edges s -> t
+            for u in outneighbors(D, t)
+                if t in L
+                    push!(illegal_edges, (Edge(s, t), Edge(t, u)))
+                end
+            end
+
+            # Handle cases where t is an ancestor
+            for u in inneighbors(D, t)
+                if !(t in L_ancestors)
+                    push!(illegal_edges, (Edge(s, t), Edge(t, u)))
+                end
+            end
+        end
+
+        for t in inneighbors(D, s)
+            # Handle all (incoming) edges s <- t
+            for u in outneighbors(D, t)
+                if t in L
+                    push!(illegal_edges, (Edge(s, t), Edge(t, u)))
+                end
+            end
+
+            # Handle cases for non-colliders (s <- t <- u)
+            for u in inneighbors(D, t)
+                if t in L
+                    push!(illegal_edges, (Edge(s, t), Edge(t, u)))
+                end
+            end
+        end
+    end
+
+
+    # 3. Perform the star reachability algorithm
+    K_prime = star_reachability(D, illegal_edges, J)
+
+    # 4. Determine the *-separated nodes
+    K = collect(vertices(D))
+    setdiff!(K, K_prime)
+    setdiff!(K, J)
+    setdiff!(K, L)
+
+    return K
+end
+
+
+#=     # 3a. Construct the illegal list of edges
     illegal_edges = Tuple{Edge, Edge}[]
     for s in vertices(D)
         for t in vertices(D)
@@ -131,7 +180,7 @@ function star_separation(
                 end
             end
             for u in in_lists[t]
-                if !(t in descendants)
+                if !(t in L_ancestors)
                     push!(illegal_edges, (Edge(s, t), Edge(t, u)))
                 end
             end
@@ -150,16 +199,6 @@ function star_separation(
                 end
             end
         end
-    end
+    end =#
 
-    # 3. Perform the star reachability algorithm
-    K_prime = star_reachability(D, illegal_edges, J)
 
-    # 4. Determine the *-separated nodes
-    K = vertices(D)
-    setdiff!(K, K_prime)
-    setdiff!(K, J)
-    setdiff!(K, L)
-
-    return K
-end
