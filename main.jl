@@ -31,7 +31,7 @@ function skel_from_statements(H::SimpleDiGraph, S::Vector{Any})
     sort!(S, by = x -> length(x[3]))
     for statement in S
         i, j, K = statement 
-        if has_edge(G, i, j)
+        if has_edge(G, i, j) && (all( k-> has_edge(G, i, k), K) || all( k-> has_edge(G, k,j), K)) 
             rem_edge!(G, i, j)
         end
     end
