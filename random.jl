@@ -18,7 +18,7 @@ end
 i = 0
 while i < 100
     testgraph = generate_random_dag(7, 0.5)
-    if same_skeleton(testgraph, dsep_skeleton(testgraph))
+    if same_skeleton(testgraph, starsep_skeleton(testgraph))
         i = i+1
     else 
         print("unequal skeletons!")
