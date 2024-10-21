@@ -58,7 +58,6 @@ same_skeleton(H::SimpleDiGraph, G::SimpleGraph) = (get_skeleton(H) == G)
 
 
 
-
 #= function skel_from_statements(H::SimpleDiGraph, S::Vector{Any})
         G = complete_graph(nv(H))
         sort!(S,by = x->length(x[3]))

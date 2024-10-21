@@ -18,9 +18,9 @@ end
 i = 0
 while i < 100
     testgraph = generate_random_dag(7, 0.5)
-    if same_skeleton(testgraph, starsep_skeleton(testgraph))
+    if starsep_skeleton(testgraph) == dsep_skeleton(testgraph) && issubset(get_dsepstatements(testgraph), get_starsepstatements(testgraph))
         i = i+1
-    else 
+    else
         print("unequal skeletons!")
         break 
     end
