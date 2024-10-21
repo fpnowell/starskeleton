@@ -1,6 +1,5 @@
 include("k_starsep.jl")
 
-#GOAL: write functions "starsep", "get_starsepstatements" based on k_starsep code 
 
 function get_starsepstatements(H::SimpleDiGraph)
     L = Any[]
@@ -8,7 +7,7 @@ function get_starsepstatements(H::SimpleDiGraph)
     for edge in edges(G);
         i = src(edge)
         j = dst(edge)
-        ne_ij = setdiff(union!(neighbors(G,i), neighbors(G,j)), [i,j]) 
+        ne_ij = setdiff(vertices(G), [i,j]) #different than get_dsepstatements. Don't only consider neighbors! 
         for K in collect(powerset(ne_ij))
             if starsep(H, i, j, K)
                 push!(L, [i,j,K])

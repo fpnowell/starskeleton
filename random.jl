@@ -16,9 +16,10 @@ end
 
 
 i = 0
-while i < 1000
+while i < 100
     testgraph = generate_random_dag(7, 0.5)
-    if same_skeleton(testgraph, starsep_skeleton(testgraph)) && issubset(get_dsepstatements(testgraph), get_starsepstatements(testgraph))
+    #if same_skeleton(testgraph, starsep_skeleton(testgraph)) && issubset(get_dsepstatements(testgraph), get_starsepstatements(testgraph))
+    if verify_theorem(testgraph)
         i = i+1
     else
         print("unequal skeletons!")

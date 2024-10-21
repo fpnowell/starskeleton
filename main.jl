@@ -52,10 +52,47 @@ end
 
 same_skeleton(H::SimpleDiGraph, G::SimpleGraph) = (get_skeleton(H) == G)
 
+function statement_difference(G::SimpleDiGraph)
+    return setdiff(get_starsepstatements(G), get_dsepstatements(G))
+end 
 
 
+#TODO: this should check if K_prime is a subset of one or the other! Not the union! Although this is a more lax condition, so the counterexample is still valid
+function verify_theorem(H::SimpleDiGraph)
+    L = statement_difference(H)
+    bool = true
+    while !isempty(L)
+        statement = pop!(L)
+        i, j, K = statement 
+        P = collect(powerset(K))
+        if any(K_prime -> in([i,j,K_prime],get_starsepstatements(H)) && issubset(K_prime, setdiff(union(neighbors(H,i), neighbors(H,j)), [i,j])), P)
+            continue 
+        else 
+            bool = false 
+            break 
+        end 
+    end 
+    return bool 
+end 
 
 
+function _verify_theorem(H::SimpleDiGraph)
+    L = statement_difference(H)
+    bool = true
+    while !isempty(L)
+        statement = pop!(L)
+        i, j, K = statement 
+        P = collect(powerset(K))
+        if any(K_prime -> in([i,j,K_prime],get_starsepstatements(H)) && 
+            (issubset(K_prime, setdiff(union(inneighbors(H,i), neighbors(H,i)), [j])) || issubset(K_prime, setdiff(union(inneighbors(H,j), neighbors(H,j)), [i]))), P)
+            continue 
+        else 
+            bool = false 
+            break 
+        end 
+    end 
+    return bool 
+end 
 
 
 #= function skel_from_statements(H::SimpleDiGraph, S::Vector{Any})
