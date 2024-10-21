@@ -10,7 +10,7 @@ function get_starsepstatements(H::SimpleDiGraph)
         j = dst(edge)
         ne_ij = setdiff(union!(neighbors(G,i), neighbors(G,j)), [i,j]) 
         for K in collect(powerset(ne_ij))
-            if j in star_separation(H, [i], K)
+            if starsep(H, i, j, K)
                 push!(L, [i,j,K])
                 end
         end
@@ -22,3 +22,7 @@ end
 function starsep_skeleton(H::SimpleDiGraph)
     return skel_from_statements(H, get_starsepstatements(H))
 end 
+
+function starsep(H::SimpleDiGraph, i::Int64, j::Int64, K::Vector{Int64})
+    return in(j, star_separation(H, [i], K))
+end
