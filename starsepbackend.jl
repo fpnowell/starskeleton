@@ -1,3 +1,5 @@
+# backend for starsep / get_starsepstatements, largely based on Kamillo's implementation
+#It seems to work, although it's quite inefficient compared to dsep. 
 using Graphs, CausalInference
 
 # Define the types for edges and tagged edges
@@ -13,7 +15,14 @@ end
 
 
 # Function to perform the star reachability search
-function star_reachability(
+#= INPUT: G, a DAG
+        J, a set of nodes
+        illegal_edges, a set of pairs of "illegal"  edges of G 
+
+OUTPUT: 
+        R, the set of all nodes reachable from R which pass through at most one pair of illegal edges
+ =#
+ function star_reachability(
     D::SimpleDiGraph,
     illegal_edges::Vector{Tuple{Edge, Edge}},
     J::Vector{Int64}
@@ -69,7 +78,6 @@ function star_reachability(
                 new_tagged_edge in visited && continue 
 
                 # Skip if it's an illegal edge pair
-                #FIXME: I don't think I'm ever getting here! What to do...
                 (e, Edge(t, u)) in illegal_edges && continue 
                 # Add to the next frontier
                 push!(next_frontier, new_tagged_edge)
@@ -102,6 +110,16 @@ end
 
 
 # Function to check for star-separation
+#=      INPUT:  D, a DAG 
+                J, a set of nodes (the "starting" set)
+                L, a set of nodes disjoint from K (the separating set)
+
+      OUTPUT:   K, the set of all nodes in D which are star separated from J given L 
+
+The algorithm works similar to Geiger, Verma, Pearl "d -SEPARATION: FROM THEOREMS TO ALGORITHMS"
+with a new condition for illegal pairs of edges in step iii of algorithm 2  =#
+
+
 function star_separation(
     D::SimpleDiGraph,
     J::Vector{Int64},
@@ -113,18 +131,18 @@ function star_separation(
         union!(L_ancestors, ancestors(D,v))
     end
 
-        # 3a. Construct the illegal list of edges
+    # 2. Collect the list of illegal pairs of edges
     illegal_edges = Tuple{Edge, Edge}[]
     for s in vertices(D)
         for t in outneighbors(D, s)
-            # Handle all (outgoing) edges s -> t
+            # Handle cases s -> t -> u, where t in L ("t is a non-collider in L")
             for u in outneighbors(D, t)
                 if t in L
                     push!(illegal_edges, (Edge(s, t), Edge(t, u)))
                 end
             end
 
-            # Handle cases where t is an ancestor
+            # Handle cases s -> t <- u,  where t not in an(L) ("t is a collider not in an(L)")
             for u in inneighbors(D, t)
                 if !(t in L_ancestors)
                     push!(illegal_edges, (Edge(s, t), Edge(t, u)))
@@ -133,14 +151,14 @@ function star_separation(
         end
 
         for t in inneighbors(D, s)
-            # Handle all (incoming) edges s <- t
+            # Handle cases s <- t -> u, where t in L ("t is a non-collider in L)
             for u in outneighbors(D, t)
                 if t in L
                     push!(illegal_edges, (Edge(s, t), Edge(t, u)))
                 end
             end
 
-            # Handle cases for non-colliders (s <- t <- u)
+            # Handle cases s <- t <- u, where t in L ("t is a non-collider in L")
             for u in inneighbors(D, t)
                 if t in L
                     push!(illegal_edges, (Edge(s, t), Edge(t, u)))

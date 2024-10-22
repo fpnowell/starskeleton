@@ -1,4 +1,4 @@
-include("k_starsep.jl")
+include("starsepbackend.jl")
 
 
 function get_starsepstatements(H::SimpleDiGraph)
@@ -7,7 +7,7 @@ function get_starsepstatements(H::SimpleDiGraph)
     for edge in edges(G);
         i = src(edge)
         j = dst(edge)
-        ne_ij = setdiff(vertices(G), [i,j]) #different than get_dsepstatements. Don't only consider neighbors! 
+        ne_ij = setdiff(vertices(G), [i,j]) #unlike d-sepstatements, we don't consider only subsets of ne(i) or ne(j)
         for K in collect(powerset(ne_ij))
             if starsep(H, i, j, K)
                 push!(L, [i,j,K])
@@ -16,11 +16,6 @@ function get_starsepstatements(H::SimpleDiGraph)
     end
     return L
 end
-
-
-function starsep_skeleton(H::SimpleDiGraph)
-    return skel_from_statements(H, get_starsepstatements(H))
-end 
 
 function starsep(H::SimpleDiGraph, i::Int64, j::Int64, K::Vector{Int64})
     return in(j, star_separation(H, [i], K))

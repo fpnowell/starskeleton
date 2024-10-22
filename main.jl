@@ -1,46 +1,37 @@
 using CausalInference, Graphs, TikzPictures, TikzGraphs
 using Combinatorics
+using Serialization 
 
-
-function get_dsepstatements(H::SimpleDiGraph)
-    L = Any[]
-    G = complete_graph(nv(H))
-    for  edge in edges(G);
-        i = src(edge)
-        j = dst(edge)
-        ne_ij = setdiff(union(neighbors(G,i),neighbors(G,j)), [i,j]) 
-        for K in collect(powerset(ne_ij))
-            #TODO: currently missing line 5 of the pseudocode ( (i,k) in G, etc.. )! Do you need this!? 
-            if dsep(H, i,j, K);
-                push!(L, [i,j,K])
-                end
-        end
-    end
-    return L
-end
-
-function dsep_skeleton(H::SimpleDiGraph)
-    return skel_from_statements(H, get_dsepstatements(H))
-end    
+include("dsep.jl")
+include("starsep.jl")
 
 #QUESTION: in its current state, this simply removes edges from G
-#as they appear in sort!(S) 
+#as they appear in sort!(S ...) 
 #Is this enough? Something else to consider? 
+
+
 function skel_from_statements(H::SimpleDiGraph, S::Vector{Any})
     G = complete_graph(nv(H))
     sort!(S, by = x -> length(x[3]))
     for statement in S
         i, j, K = statement 
-        if has_edge(G, i, j) && (all( k-> has_edge(G, i, k), K) || all( k-> has_edge(G, k,j), K)) 
+        if has_edge(G, i, j) && (all( k-> has_edge(G, i, k), K) || all( k-> has_edge(G, k,j), K)) #line 5 of pseudocode
             rem_edge!(G, i, j)
         end
     end
     return G
 end
 
+function dsep_skeleton(H::SimpleDiGraph)
+    return skel_from_statements(H, get_dsepstatements(H))
+end    
+
+function starsep_skeleton(H::SimpleDiGraph)
+    return skel_from_statements(H, get_starsepstatements(H))
+end 
 
 
-#TODO: there has to be a more efficient way of doing this
+#constructs the underlying undirected graph of a DAG
 function get_skeleton(H::SimpleDiGraph)
     n = nv(H)
     G = SimpleGraph(n,0)
@@ -56,27 +47,18 @@ function statement_difference(G::SimpleDiGraph)
     return setdiff(get_starsepstatements(G), get_dsepstatements(G))
 end 
 
+#= Checks if the following claim holds for the starsep statements of H: 
 
-#TODO: this should check if K_prime is a subset of one or the other! Not the union! Although this is a more lax condition, so the counterexample is still valid
-function verify_theorem(H::SimpleDiGraph)
-    L = statement_difference(H)
-    bool = true
-    while !isempty(L)
-        statement = pop!(L)
-        i, j, K = statement 
-        P = collect(powerset(K))
-        if any(K_prime -> in([i,j,K_prime],get_starsepstatements(H)) && issubset(K_prime, setdiff(union(neighbors(H,i), neighbors(H,j)), [i,j])), P)
-            continue 
-        else 
-            bool = false 
-            break 
-        end 
-    end 
-    return bool 
-end 
+"If i indep j given K, then there exists a K_prime contained in K 
+such that i indep j given K_prime and (K_prime subset ne(i)\j or K_prime ne(j)\i "
 
+(If this is the case, then we can expect the learning step algorithm to 
+output the same skeleton using both separation conditions.
 
-function _verify_theorem(H::SimpleDiGraph)
+The algorithm iterates through the size of a candidate conditioning set in ne(i)...)
+ =#
+ 
+function verify_claim(H::SimpleDiGraph)
     L = statement_difference(H)
     bool = true
     while !isempty(L)
@@ -94,22 +76,10 @@ function _verify_theorem(H::SimpleDiGraph)
     return bool 
 end 
 
-
-#= function skel_from_statements(H::SimpleDiGraph, S::Vector{Any})
-        G = complete_graph(nv(H))
-        sort!(S,by = x->length(x[3]))
-        for edge in edges(G)
-            i = src(edge)
-            j = dst(edge)
-            for k in 1:length(S)
-                if in([i,j,S[k][3]],S)
-                    rem_edge!(G, i,j)
-                end
-            end
-        end
-        return G
-end =#
-
+function DAG_to_pdf(H::SimpleDiGraph, name::String)
+    t = plot(H)
+    save(PDF(name* ".pdf"), t)
+end 
 
 
 #= G = complete_graph(3) 
@@ -127,4 +97,3 @@ t = plot(G, ["1","2","3"])
 save(PDF("graph"), t)
  =#
 
- #TODO: write code that gives me MAXIMALLY separated sets (reduces complexity)

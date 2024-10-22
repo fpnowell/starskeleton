@@ -1,3 +1,6 @@
+#An attempt at modifying the "dsep" function from CausalInference.jl to check for star separation
+#Currently doesn't work (see "testgraph" for a counterexample)
+
 using CausalInference, Graphs 
 function starsep(g::AbstractGraph, U, V, S; verbose = false)
     T = eltype(g)

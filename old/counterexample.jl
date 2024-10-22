@@ -1,6 +1,7 @@
-include("new_starsep.jl")
+include("../starsep.jl")
+using Serialization
 
-counterexample = deserialize("counterexample.jls")
+counterexample = deserialize("old/counterexample.jls")
 
 L = statement_difference(counterexample)
 
