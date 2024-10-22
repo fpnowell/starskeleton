@@ -17,7 +17,27 @@ end
 
 #script which verifies claims on randomly generated DAGs 
 
-i = 0
+function test_for_condition(k::Int, n::Int, p::Float64)
+    i = 0
+    while i < k
+        testgraph = generate_random_dag(n, p)
+        #if same_skeleton(testgraph, starsep_skeleton(testgraph))
+        #if issubset(get_dsepstatements(testgraph), get_starsepstatements(testgraph))
+        if verify_claim(testgraph)
+            i = i+1
+        else
+            DAG_to_pdf(testgraph, "counterexample")
+            serialize("counterexample.jls", testgraph)
+            print("counterexample found!")
+            break 
+        end
+    end 
+    return i == k 
+end 
+
+
+
+#= i = 0
 while i < 100
     testgraph = generate_random_dag(7, 0.5)
     if same_skeleton(testgraph, starsep_skeleton(testgraph)) && issubset(get_dsepstatements(testgraph), get_starsepstatements(testgraph))
@@ -31,4 +51,4 @@ while i < 100
     end
 end 
 
-
+ =#

@@ -57,7 +57,7 @@ output the same skeleton using both separation conditions.
 
 The algorithm iterates through the size of a candidate conditioning set in ne(i)...)
  =#
- 
+
 function verify_claim(H::SimpleDiGraph)
     L = statement_difference(H)
     bool = true
@@ -80,20 +80,4 @@ function DAG_to_pdf(H::SimpleDiGraph, name::String)
     t = plot(H)
     save(PDF(name* ".pdf"), t)
 end 
-
-
-#= G = complete_graph(3) 
-
-nv(G)
-
-ne(G)
-
-rem_edge!(G, 1,2)
-
-ne(G) 
-
-t = plot(G, ["1","2","3"])
-
-save(PDF("graph"), t)
- =#
 
