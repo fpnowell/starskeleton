@@ -23,7 +23,8 @@ function test_for_condition(k::Int, n::Int, p::Float64)
         testgraph = generate_random_dag(n, p)
         #if same_skeleton(testgraph, starsep_skeleton(testgraph))
         #if issubset(get_dsepstatements(testgraph), get_starsepstatements(testgraph))
-        if verify_claim(testgraph)
+        if isempty(statement_difference(testgraph))
+        #if verify_claim(testgraph)
             i = i+1
         else
             DAG_to_pdf(testgraph, "counterexample")
@@ -32,7 +33,7 @@ function test_for_condition(k::Int, n::Int, p::Float64)
             break 
         end
     end 
-    return i == k 
+    
 end 
 
 

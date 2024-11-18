@@ -81,3 +81,41 @@ function DAG_to_pdf(H::SimpleDiGraph, name::String)
     save(PDF(name* ".pdf"), t)
 end 
 
+
+function starsep_statements_wrt_nodes(G::SimpleDiGraph, i::Int64, j::Int64)
+    L = get_starsepstatements(G)
+    output = []
+    for statement in L
+        k, l, K = statement 
+        if k == i && l == j
+            push!(output, K)
+        end 
+    end 
+    return output
+end 
+
+
+function dsep_statements_wrt_nodes(G::SimpleDiGraph, i::Int64, j::Int64)
+    L = get_dsepstatements(G)
+    output = []
+    for statement in L
+        k, l, K = statement 
+        if k == i && l == j
+            push!(output, K)
+        end 
+    end 
+    return output
+end 
+
+
+function statement_diff_wrt_nodes(G::SimpleDiGraph, i::Int64, j::Int64)
+    L = statement_difference(G)
+    output = []
+    for statement in L
+        k, l, K = statement 
+        if k == i && l == j
+            push!(output, K)
+        end 
+    end 
+    return output
+end 
