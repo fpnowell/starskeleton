@@ -20,16 +20,22 @@ end
 # make the critical DAG given a dag G, a conditioning set K, and weights C
 function critical_graph(G::SimpleDiGraph, K::Vector, C)
 
+    V = Graphs.vertices(G)
+
     # make the kleene star to test for max weighted paths
     Cstar = kleene_star(C);
 
     # make an empty graph which will be our critical graph that we add edges to
-    Gstar = SimpleDiGraph(4, 0)
+    Gstar = SimpleDiGraph(length(V), 0)
 
     # loop over every possible edge
-    for e in subsets(collect(Graphs.vertices(G)), 2)
+    for e in Iterators.product(V, V)
 
         (i, j) = e
+
+        if i == j
+            continue
+        end
 
         # collect critical paths
         crit_paths = [p for p in all_simple_paths(G, i, j) if path_weight(C, p) == Cstar[i, j]]
@@ -51,8 +57,6 @@ function critical_graph(G::SimpleDiGraph, K::Vector, C)
 end
 
 
-
-
 ##########################################
 # Examples
 ##########################################
@@ -67,3 +71,25 @@ T = tropical_semiring(max)
 z = zero(T)
 C = matrix(T, [[z, 1, 2, 1], [z, z, z, 3], [z, z, z, 5], [z, z, z, z]])
 critical_graph(G, [3], C)
+
+
+
+##########################################
+# Examples
+##########################################
+diamond = SimpleDiGraph(4,0)
+diamond_edges = [(2,1),(1,3),(2,4),(3,4)]
+for edge in diamond_edges;
+    Graphs.add_edge!(diamond,edge)
+end 
+G = diamond
+
+T = tropical_semiring(max)
+z = zero(T)
+C = matrix(T, [[z, z, 1, z], [1, z, z, 2], [z, z, z, 1], [z, z, z, z]])
+Gstar = critical_graph(G, [], C)
+E = collect(Graphs.edges(Gstar))
+
+for e in Iterators.product(1:4, 1:4)
+    println(e)
+end
