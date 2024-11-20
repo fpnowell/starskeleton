@@ -1,44 +1,26 @@
 include("main.jl")
-function graph_from_edges(A::Vector{Tuple{Int64, Int64}})
+
+function _graph_from_edges(A::Vector{Tuple{Int64, Int64}})
     n = maximum([max(a[1],a[2]) for a in A ]) 
     D = SimpleDiGraph(n,0)
     for (i,j) in A 
-        add_edge!(D, i, j)
+        Graphs.add_edge!(D, i, j)
     end 
     return D 
 end  
 
 
-collider = SimpleDiGraph(3, 0)
-
-add_edge!(collider, (1,3))
-
-add_edge!(collider,(2,3))
+collider = _graph_from_edges([(1,3),(2,3)])
 
 #dsep(collider, 1, 2, [])
 
 #dsep(collider, 1,2,[3])
 
-v_shape = SimpleDiGraph(3,0)
+v_shape = _graph_from_edges([(1,3),(3,2)])
 
-add_edge!(v_shape, (1,3))
-add_edge!(v_shape, (3,2))
+diamond = _graph_from_edges([(1,2),(1,3),(2,4),(3,4)])
 
-diamond = SimpleDiGraph(4,0)
-
-diamond_edges = [(1,2),(1,3),(2,4),(3,4)]
-
-for edge in diamond_edges;
-    add_edge!(diamond,edge)
-end 
-
-cassio = SimpleDiGraph(5,0)
-
-cassioedges = [(1,4),(2,4), (2,5) ,(3,5)]
-
-for edge in cassioedges;
-    add_edge!(cassio, edge)
-end
+cassio = _graph_from_edges([(1,4),(2,4), (2,5) ,(3,5)])
 
 
 longcassio = SimpleDiGraph(9,0)

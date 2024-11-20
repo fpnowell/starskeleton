@@ -33,10 +33,10 @@ end
 
 #constructs the underlying undirected graph of a DAG
 function get_skeleton(H::SimpleDiGraph)
-    n = nv(H)
+    n = Graphs.nv(H)
     G = SimpleGraph(n,0)
-    for edge in edges(H)
-        add_edge!(G, edge)
+    for edge in Graphs.edges(H)
+        Graphs.add_edge!(G, edge)
     end
     return G 
 end 
@@ -77,8 +77,8 @@ function verify_claim(H::SimpleDiGraph)
 end 
 
 function DAG_to_pdf(H::SimpleDiGraph, name::String)
-    t = plot(H)
-    save(PDF(name* ".pdf"), t)
+    t = TikzGraphs.plot(H)
+    TikzGraphs.save(PDF(name* ".pdf"), t)
 end 
 
 

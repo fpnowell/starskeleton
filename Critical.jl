@@ -77,19 +77,20 @@ critical_graph(G, [3], C)
 ##########################################
 # Examples
 ##########################################
-diamond = SimpleDiGraph(4,0)
-diamond_edges = [(2,1),(1,3),(2,4),(3,4)]
-for edge in diamond_edges;
-    Graphs.add_edge!(diamond,edge)
-end 
-G = diamond
 
 T = tropical_semiring(max)
 z = zero(T)
-C = matrix(T, [[z, z, 1, z], [1, z, z, 2], [z, z, z, 1], [z, z, z, z]])
-Gstar = critical_graph(G, [], C)
-E = collect(Graphs.edges(Gstar))
+G1 = _graph_from_edges([(1,2),(1,3),(3,4),(2,3)])
+C1=  matrix(T, [[z, 1, 1, z], [z, z, z, 2], [z, z, z, 1], [z, z, z, z]])
+G1star = critical_graph(G1, [], C1)
+G1star_given2 = critical_graph(G1, [2], C1)
+G1star_given1 = critical_graph(G1, [1],C1)
+E = collect(Graphs.edges(G1star))
 
-for e in Iterators.product(1:4, 1:4)
-    println(e)
-end
+G2 = _graph_from_edges([(2,1),(1,3),(2,4),(3,4)])
+C2 = matrix(T, [[z,z,1,z],[1,z,z,2],[z,z,z,1],[z,z,z,z]])
+G2star = critical_graph(G2, [],C2)
+G2star_given2 = critical_graph(G2, [2], C2)
+G2star_given1 = critical_graph(G2, [1], C2)
+C_cassio = matrix(T, [[z,z,z,1,z],[z,z,z,1,1],[z,z,z,z,1],[z,z,z,z,z],[z,z,z,z,z]])
+
