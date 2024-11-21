@@ -105,3 +105,7 @@ function constant_weights(G::SimpleDiGraph)
     end 
     return C
 end 
+
+G3 = _graph_from_edges([(2,1),(1,3),(3,4),(2,4),(1,4)])
+
+C3 = matrix(T, [[z,z,1,5],[1,z,z,1],[z,z,z,1],[z,z,z,z]])

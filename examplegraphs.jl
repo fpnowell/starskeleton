@@ -33,9 +33,7 @@ diamondcassio = _graph_from_edges(diamondcassio_edges)
 
 doublecollider = _graph_from_edges([(2,1),(3,1),(2,4),(3,4)])
 
-pyramid = SimpleDiGraph(6,0)
-
-pyramid_edges = _graph_from_edges([(4,6),(5,6), (1,4),(2,4), (2,5) ,(3,5) ])
+pyramid =_graph_from_edges([(4,6),(5,6), (1,4),(2,4), (2,5) ,(3,5) ])
 
 double_pyramid = _graph_from_edges([(1,6),(2,6),(2,7),(3,7),(3,8),(4,8),(4,9),(5,9), (6,10),(7,10),(8,11),(9,11)])
 

@@ -23,7 +23,7 @@ function is_type_d(G::SimpleDiGraph, P::Vector, K::Vector)
 end 
 
 function is_type_e(G::SimpleDiGraph, P::Vector, K::Vector)
-    return issubset([P[1],P[3]], Graphs.outneighbors(G, P[2])) && issubset([P[3],P[5]], Graphs.outneighbors(G, P[4])) && P[3] in K && !issubset([P[2],P[4]], K)
+    return issubset([P[1],P[3]], Graphs.outneighbors(G, P[2])) && issubset([P[3],P[5]], Graphs.outneighbors(G, P[4])) && P[3] in K && !(P[2] in K) && !(P[4] in K)
 end 
 
 #Question: Is something gained from nesting the conditions here, complexity-wise? 
@@ -55,6 +55,8 @@ function Csep(G::SimpleDiGraph, C, K::Vector, i::Int64, j::Int64)
     return bool 
 end 
 
+Csep(G::SimpleDiGraph, K i, j) = Csep(G, constant_weights(G), K, i, j )
+
 
 function Csepstatements_wrt_nodes(G::SimpleDiGraph, C, i, j)
     L = []
@@ -65,6 +67,11 @@ function Csepstatements_wrt_nodes(G::SimpleDiGraph, C, i, j)
     end 
     return L 
 end 
+
+Csepstatements_wrt_nodes(G::SimpleDiGraph, i, j) = Csepstatements_wrt_nodes(G, constant_weights(G), i, j)
+
+
+
 
 function get_Csepstatements(G::SimpleDiGraph, C)
     L = []
@@ -77,8 +84,9 @@ function get_Csepstatements(G::SimpleDiGraph, C)
     end 
     return L 
 end 
+
+get_Csepstatements(G::SimpleDiGraph) = get_Csepstatements(G, constant_weights(G))
     
-L = get_Csepstatements(G1, C1)
 
 
 function skel_from_statements(H::SimpleDiGraph, S::Vector{Any})
@@ -99,3 +107,8 @@ function C_star_difference(H::SimpleDiGraph)
     return setdiff(L1,L2)
 end 
 
+function Cstar_skeleton(H::SimpleDiGraph, C)
+    return skel_from_statements(H, get_Csepstatements(H, C))
+end 
+
+Cstar_skeleton(H::SimpleDiGraph) = Cstar_skeleton(H, constant_weights(H))
