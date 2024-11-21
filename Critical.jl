@@ -1,5 +1,6 @@
-#include("main.jl")
-using Oscar
+include("main.jl")
+include("examplegraphs.jl")
+import Oscar: tropical_semiring, zero, matrix, ncols 
 using Graphs
 
 
@@ -80,7 +81,7 @@ critical_graph(G, [3], C)
 
 T = tropical_semiring(max)
 z = zero(T)
-G1 = _graph_from_edges([(1,2),(1,3),(3,4),(2,3)])
+G1 = _graph_from_edges([(1,2),(1,3),(3,4),(2,4)])
 C1=  matrix(T, [[z, 1, 1, z], [z, z, z, 2], [z, z, z, 1], [z, z, z, z]])
 G1star = critical_graph(G1, [], C1)
 G1star_given2 = critical_graph(G1, [2], C1)
@@ -94,3 +95,13 @@ G2star_given2 = critical_graph(G2, [2], C2)
 G2star_given1 = critical_graph(G2, [1], C2)
 C_cassio = matrix(T, [[z,z,z,1,z],[z,z,z,1,1],[z,z,z,z,1],[z,z,z,z,z],[z,z,z,z,z]])
 
+function constant_weights(G::SimpleDiGraph)
+    n = Graphs.nv(G)
+    C = matrix(T, [[z for i in 1:n] for j in 1:n])
+    for i in 1:n , j in 1:n 
+        if Graphs.has_edge(G, i, j)
+            C[i,j] = 1 
+        end 
+    end 
+    return C
+end 
