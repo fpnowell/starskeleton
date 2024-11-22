@@ -1,4 +1,4 @@
-
+using CausalInference 
 
 function get_dsepstatements(H::SimpleDiGraph)
     L = Any[]
@@ -15,3 +15,16 @@ function get_dsepstatements(H::SimpleDiGraph)
     end
     return L
 end
+
+
+function dsep_statements_wrt_nodes(G::SimpleDiGraph, i::Int64, j::Int64)
+    L = get_dsepstatements(G)
+    output = []
+    for statement in L
+        k, l, K = statement 
+        if k == i && l == j
+            push!(output, K)
+        end 
+    end 
+    return output
+end 

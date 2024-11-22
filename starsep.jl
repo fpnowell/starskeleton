@@ -20,3 +20,16 @@ end
 function starsep(H::SimpleDiGraph, i::Int64, j::Int64, K::Vector{Int64})
     return in(j, star_separation(H, [i], K))
 end
+
+function starsep_statements_wrt_nodes(G::SimpleDiGraph, i::Int64, j::Int64)
+    L = get_starsepstatements(G)
+    output = []
+    for statement in L
+        k, l, K = statement 
+        if k == i && l == j
+            push!(output, K)
+        end 
+    end 
+    return output
+end 
+

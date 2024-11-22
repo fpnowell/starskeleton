@@ -1,7 +1,4 @@
 include("Critical.jl")
-include("examplegraphs.jl")
-
-#TODO: Fix these functions such as to guarantee that the white nodes in the pictures are NOT in K 
 
 function is_type_b(G::SimpleDiGraph, P::Vector, K::Vector)
     return  issubset([P[1], P[3]], Graphs.outneighbors(G,P[2])) && !(P[2] in K) 
@@ -55,7 +52,7 @@ function Csep(G::SimpleDiGraph, C, K::Vector, i::Int64, j::Int64)
     return bool 
 end 
 
-Csep(G::SimpleDiGraph, K i, j) = Csep(G, constant_weights(G), K, i, j )
+Csep(G::SimpleDiGraph, K, i, j) = Csep(G, constant_weights(G), K, i, j )
 
 
 function Csepstatements_wrt_nodes(G::SimpleDiGraph, C, i, j)
@@ -87,28 +84,3 @@ end
 
 get_Csepstatements(G::SimpleDiGraph) = get_Csepstatements(G, constant_weights(G))
     
-
-
-function skel_from_statements(H::SimpleDiGraph, S::Vector{Any})
-    G = complete_graph(nv(H))
-    sort!(S, by = x -> length(x[3]))
-    for statement in S
-        i, j, K = statement 
-        if has_edge(G, i, j) && (all( k-> has_edge(G, i, k), K) || all( k-> has_edge(G, k,j), K)) #line 5 of pseudocode
-            rem_edge!(G, i, j)
-        end
-    end
-    return G
-end
-
-function C_star_difference(H::SimpleDiGraph)
-    L1 = get_Csepstatements(H, constant_weights(H))
-    L2 = get_starsepstatements(H)
-    return setdiff(L1,L2)
-end 
-
-function Cstar_skeleton(H::SimpleDiGraph, C)
-    return skel_from_statements(H, get_Csepstatements(H, C))
-end 
-
-Cstar_skeleton(H::SimpleDiGraph) = Cstar_skeleton(H, constant_weights(H))
