@@ -32,3 +32,6 @@ C3 = constant_weights(G3)
 C3[2,4] = 5
 
 G3skelvar = Csep_skeleton(G3, C3) #(2,4) no longer cut 
+
+#TODO: Write a function which checks wheteher the output of PC contains all of the critical paths in the original DAG 
+

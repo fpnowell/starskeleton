@@ -32,3 +32,7 @@ end
 function C_star_skeletons_unequal(H::SimpleDiGraph)
     return !(Csep_skeleton(H) == starsep_skeleton(H))
 end 
+
+function star_C_statements(H::SimpleDiGraph)
+    return !(issubset(get_starsepstatements(H), get_Csepstatements(H)))
+end 
