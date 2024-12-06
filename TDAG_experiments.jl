@@ -1,10 +1,17 @@
 include("main.jl")
 
-function same_Cstar_statements(G::SimpleDiGraph, H::SimpleDiGraph)
-    C_G = randomly_sampled_matrix(G)
-    #the matrices should be supported on the DAG 
-    C_H = randomly_sampled_matrix(H) 
-    return get_Csepstatements(G, C_G) == get_Csepstatements(H, C_H)
+#CLAIM 1: A Graph and its transitive closure are critically equivalent.
+
+function randomly_sampled_matrix(G::SimpleDiGraph)
+    n = Graphs.nv(G)
+    C = matrix(tropical_semiring(max), [[zero(tropical_semiring(max)) for i in 1:n] for j in 1:n])
+    for i in 1:n , j in 1:n 
+        if Graphs.has_edge(G, i, j)
+            C[i,j] = rand(1:100)
+        end 
+    end 
+    return C
+
 end 
 
 function critically_equivalent_to_closure(G::SimpleDiGraph, k::Int64)
@@ -12,7 +19,6 @@ function critically_equivalent_to_closure(G::SimpleDiGraph, k::Int64)
     i = 0
     while i < k
         C_G = randomly_sampled_matrix(G)
-        #the matrices should be supported on the DAG 
         C_H = randomly_sampled_matrix(H)
         if !(get_Csepstatements(G, C_G) == get_Csepstatements(H, C_H))
             i = i+1
@@ -28,34 +34,28 @@ end
 
 critically_equivalent_to_closure(G::SimpleDiGraph) = critically_equivalent_to_closure(G, 1000)
 not_equivalent_to_closure(G::SimpleDiGraph) = !critically_equivalent_to_closure(G)
+#find_graph_with_property(100, 6, 0.7, not_equivalent_to_closure)
 
-function randomly_sampled_matrix(G::SimpleDiGraph)
-    n = Graphs.nv(G)
-    C = matrix(tropical_semiring(max), [[zero(tropical_semiring(max)) for i in 1:n] for j in 1:n])
-    for i in 1:n , j in 1:n 
-        if Graphs.has_edge(G, i, j)
-            C[i,j] = rand(1:100)
-        end 
-    end 
-    return C
+#the tests above support CLAIM 1 
 
-end 
+#CLAIM 2: No two distinct TDAGs are critically equivalent
+
 
 function test_for_critical_equivalence(G::SimpleDiGraph, H::SimpleDiGraph, k::Int64)
     i = 0
+    C_G = randomly_sampled_matrix(G)
     while i < k
-        C_G = randomly_sampled_matrix(G)
         C_H = randomly_sampled_matrix(H)
         if !(get_Csepstatements(G, C_G) == get_Csepstatements(H, C_H))
             i = i+1
         else
             serialize("matrices.jls", [C_G, C_H])
-            print("example found!")
+            print("EXAMPLE FOUND!!!")
             break 
         end
     end 
     if i == k 
-        print("no example found!")
+        print("...")
     end 
 
 end 
@@ -70,13 +70,13 @@ function test_for_critical_equivalence(k::Int64)
         if !(get_Csepstatements(G, C_G) == get_Csepstatements(H, C_H))
             i = i+1
         else
-            serialize("matrices.jls", [C_G, C_H])
-            print("example found!")
+            serialize("matrices.jl", [C_G, C_H])
+            print("!!!EXAMPLE FOUND!!!!")
             break 
         end
     end 
     if i == k 
-        print("no example found!")
+        print("...")
     end 
 
 end 
@@ -92,7 +92,6 @@ function all_DAGS(n::Int64)
     end 
     return D 
 end 
-
     
 
 function all_transitively_closed_DAGS(n::Int64)
@@ -106,21 +105,31 @@ function all_transitively_closed_DAGS(n::Int64)
     return T
 end 
 
-L1 = all_transitively_closed_DAGS(4)
+L1 = all_transitively_closed_DAGS(5)
 
 L2 = [] 
-
 for G in L1 
-    if ne(G) > 3
+    if ne(G) > 3 && nv(G) == 5
         push!(L2,G)
     end 
 end 
 
 for G1 in L2, G2 in L2 
     if !(G1 == G2)
-        test_for_critical_equivalence(G1, G2, 1000)
+        test_for_critical_equivalence(G1, G2, 100)
     end 
 end 
 
-#It would appear that no two distinct transitively closed DAGs on 4 nodes are critically equivalent. What can we conclude from this?
+for i in 1:234
+    test_for_critical_equivalence(L2[i],L2[235],1000)
+end 
+
+#It would appear that no two distinct TDAGs on 4 nodes are critically equivalent. What can we conclude from this?
 # Are the transitively closed DAGs precisely the maximal representants of critical equivalence classes? 
+
+
+#= function same_Cstar_statements(G::SimpleDiGraph, H::SimpleDiGraph)
+    C_G = randomly_sampled_matrix(G)
+    C_H = randomly_sampled_matrix(H) 
+    return get_Csepstatements(G, C_G) == get_Csepstatements(H, C_H)
+end   =#
