@@ -94,22 +94,22 @@ function all_DAGS(n::Int64)
 end 
     
 
-function all_transitively_closed_DAGS(n::Int64)
+function all_TDAGs(n::Int64)
     D = all_DAGS(n)
     T = []
     for G in D
-        if G == transitiveclosure(G)
+        if G == transitiveclosure(G) && is_connected(get_skeleton(G)) && nv(G) == n 
             push!(T, G)
         end 
     end 
     return T
 end 
-
-L1 = all_transitively_closed_DAGS(5)
+#= 
+L1 = all_TDAGs(4)
 
 L2 = [] 
 for G in L1 
-    if ne(G) > 3 && nv(G) == 5
+    if nv(G) == 4
         push!(L2,G)
     end 
 end 
@@ -123,7 +123,7 @@ end
 for i in 1:234
     test_for_critical_equivalence(L2[i],L2[235],1000)
 end 
-
+ =#
 #It would appear that no two distinct TDAGs on 4 nodes are critically equivalent. What can we conclude from this?
 # Are the transitively closed DAGs precisely the maximal representants of critical equivalence classes? 
 
@@ -133,3 +133,24 @@ end
     C_H = randomly_sampled_matrix(H) 
     return get_Csepstatements(G, C_G) == get_Csepstatements(H, C_H)
 end   =#
+
+#the sequence is 1, 1, 3, 18, 181,2792,... which is the number of connected partial orders on n elements contained in the linear order This makes sense! 
+#In the OEIS, the example for n = 4 is precisely the edge sets of fournodeTDAGs 
+
+threenodeTDAGs = all_TDAGs(3)
+fournodeTDAGs = all_TDAGs(4)
+fivenodeTDAGs = all_TDAGs(5)
+
+#sixnodeTDAGs = all_TDAGs(6)
+
+#sevennodeTDAGs = all_TDAGs(7)
+
+#eightnodeTDAGs = all_TDAGs(8)
+
+for G1 in fournodeTDAGs, G2 in fournodeTDAGs
+    if !(G1 == G2)
+        test_for_critical_equivalence(G1, G2, 100)
+    end 
+end 
+
+L = [collect(edges(G)) for G in fournodeTDAGs]
