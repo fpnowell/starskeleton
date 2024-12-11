@@ -81,7 +81,7 @@ function test_for_critical_equivalence(k::Int64)
 
 end 
 
-function all_DAGS(n::Int64)
+function all_top_ordered_DAGS(n::Int64)
     D = []
     L = [(i,j) for i in 1:n, j in 1:n if i<j]
     for E in collect(powerset(L))
@@ -94,8 +94,8 @@ function all_DAGS(n::Int64)
 end 
     
 
-function all_TDAGs(n::Int64)
-    D = all_DAGS(n)
+function all_top_ordered_TDAGs(n::Int64)
+    D = all_top_ordered_DAGs(n)
     T = []
     for G in D
         if G == transitiveclosure(G) && is_connected(get_skeleton(G)) && nv(G) == n 
@@ -105,7 +105,7 @@ function all_TDAGs(n::Int64)
     return T
 end 
 #= 
-L1 = all_TDAGs(4)
+L1 = all_top_ordered_TDAGs(4)
 
 L2 = [] 
 for G in L1 
@@ -137,15 +137,15 @@ end   =#
 #the sequence is 1, 1, 3, 18, 181,2792,... which is the number of connected partial orders on n elements contained in the linear order This makes sense! 
 #In the OEIS, the example for n = 4 is precisely the edge sets of fournodeTDAGs 
 
-threenodeTDAGs = all_TDAGs(3)
-fournodeTDAGs = all_TDAGs(4)
-fivenodeTDAGs = all_TDAGs(5)
+threenodeTDAGs = all_top_ordered_TDAGs(3)
+fournodeTDAGs = all_top_ordered_TDAGs(4)
+fivenodeTDAGs = all_top_ordered_TDAGs(5)
 
-#sixnodeTDAGs = all_TDAGs(6)
+#sixnodeTDAGs = all_top_ordered_TDAGs(6)
 
-#sevennodeTDAGs = all_TDAGs(7)
+#sevennodeTDAGs = all_top_ordered_TDAGs(7)
 
-#eightnodeTDAGs = all_TDAGs(8)
+#eightnodeTDAGs = all_top_ordered_TDAGs(8)
 
 for G1 in fournodeTDAGs, G2 in fournodeTDAGs
     if !(G1 == G2)
@@ -184,9 +184,26 @@ function are_crit_equiv(G::SimpleDiGraph, H::SimpleDiGraph, t::Int64)
 end
 
 
-function generate_all_dags(n::Int64)
+function all_DAGs(n::Int64)
+    D = []
+    L = [(i,j) for i in 1:n, j in 1:n if i<j]
+    perms = permutations(1:n)
+    for E in collect(powerset(L))
+        if !isempty(E) 
+            for perm in perms 
+                F = [(perm[i],perm[j]) for (i,j) in E] 
+
+                push!(D, sort(F))
+            end 
+
+        end 
+
+    end     
+    return DAG_from_edges.(collect(Set(D)))
 
 end
+
+
 
 
 function compute_mecs(graph_list, t)
@@ -197,6 +214,7 @@ function compute_mecs(graph_list, t)
 
         if length(mecs) == 0 
             mecs[G] = [G]
+            continue
         end
 
         found_existing_class = false
