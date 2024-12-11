@@ -154,3 +154,71 @@ for G1 in fournodeTDAGs, G2 in fournodeTDAGs
 end 
 
 L = [collect(edges(G)) for G in fournodeTDAGs]
+
+
+function get_cone_reps(G::SimpleDiGraph, t::Int64)
+
+    cones = []
+
+    for i in 1:t
+        
+        C = randomly_sampled_matrix(G)
+        ci_stmts = get_Csepstatements(G, C)
+
+        if ! (ci_stmts in cones)
+            push!(cones, ci_stmts)
+
+        end
+    end
+
+    return cones
+end
+
+
+function are_crit_equiv(G::SimpleDiGraph, H::SimpleDiGraph, t::Int64)
+
+    conesG = get_cone_reps(G, t)
+    conesH = get_cone_reps(H, t)
+
+    return any(i -> i in conesH, conesG)
+end
+
+
+function generate_all_dags(n::Int64)
+
+end
+
+
+function compute_mecs(graph_list, t)
+
+    mecs = Dict([])
+
+    for G in graph_list
+
+        if length(mecs) == 0 
+            mecs[G] = [G]
+        end
+
+        found_existing_class = false
+
+        for H in keys(mecs)
+
+            if are_crit_equiv(G, H, t)
+                mecs[H] = push!(mecs[H], G)
+                found_existing_class = true
+                break
+            end
+        end
+
+        if !found_existing_class
+            mecs[G] = [G]
+        end
+    end
+
+    return mecs
+end
+
+graph_list = map(i -> DAG_from_edges(i), [[(1, 2), (2, 3)], [(2,1), (2, 3)], [(1, 2), (1, 3)]])
+G = graph_list[1]
+
+D = compute_mecs(graph_list, 100)
