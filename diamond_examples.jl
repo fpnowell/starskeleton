@@ -2,7 +2,7 @@ include("main.jl")
 
 #Example 1: Diamond with 1-4 edge and constant weights 
 
-G1 = DAG_from_edges([(1,2),(1,3),(2,4),(3,4), (1,4)])
+G1 = DAG_from_edges([(1,2),(1,3),(2,4),(3,4)])
 
 C1 = constant_weights(G1)
 
@@ -35,3 +35,7 @@ G3skelvar = Csep_skeleton(G3, C3) #(2,4) no longer cut
 
 #TODO: Write a function which checks wheteher the output of PC contains all of the critical paths in the original DAG 
 
+G4 = DAG_from_edges([(1,2),(2,4),(3,1),(3,4)])
+
+
+G5 = DAG_from_edges([(2,1),(1,3),(3,4)])

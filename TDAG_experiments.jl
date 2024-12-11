@@ -7,7 +7,7 @@ function randomly_sampled_matrix(G::SimpleDiGraph)
     C = matrix(tropical_semiring(max), [[zero(tropical_semiring(max)) for i in 1:n] for j in 1:n])
     for i in 1:n , j in 1:n 
         if Graphs.has_edge(G, i, j)
-            C[i,j] = rand(1:100)
+            C[i,j] = rand(1:10000)
         end 
     end 
     return C
