@@ -204,7 +204,10 @@ function all_DAGs(n::Int64)
 end
 
 
-
+function get_edges(G::SimpleDiGraph)
+    n = nv(G)
+    return [(i,j) for i in 1:n ,j in 1:n if has_edge(G,i,j)]
+end 
 
 function compute_mecs(graph_list, t)
 
