@@ -110,7 +110,7 @@ end
 # make a dictionary whose keys are the DAGs in graphs
 # the values are the different CI structures obtained by sampling random matrices C
 # the number of samples per graph is given by `trials`
-function csep_markov_dict(graphs::Vector{SimpleDiGraph}, trials::Int64)
+function csep_markov_dict(graphs::Vector{SimpleDiGraph{Int64}}, trials::Int64)
 
     graph_mps = Dict()
 
