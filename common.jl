@@ -86,3 +86,28 @@ function find_graph_with_property(k::Int, n::Int, p::Float64, has_property)
     end 
 end 
 
+
+function all_DAGs(n::Int64)
+    D = []
+    L = [(i,j) for i in 1:n, j in 1:n if i<j]
+    perms = permutations(1:n)
+    for E in collect(powerset(L))
+        if !isempty(E) 
+            for perm in perms 
+                F = [(perm[i],perm[j]) for (i,j) in E] 
+
+                push!(D, sort(F))
+            end 
+
+        end 
+
+    end     
+    return DAG_from_edges.(collect(Set(D)))
+
+end
+
+
+function get_edges(G::SimpleDiGraph)
+    n = nv(G)
+    return [(i,j) for i in 1:n ,j in 1:n if has_edge(G,i,j)]
+end 

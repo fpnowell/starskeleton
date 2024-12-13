@@ -84,3 +84,146 @@ end
 
 get_Csepstatements(G::SimpleDiGraph) = get_Csepstatements(G, constant_weights(G))
     
+
+# randomly samples coefficient matrices C supported on G `trials` many times
+# outputs the list of unique C* Markov properties obtained over all samples
+function get_cone_reps(G::SimpleDiGraph, trials::Int64)
+
+    cones = []
+
+    for i in 1:trials
+        
+        C = randomly_sampled_matrix(G)
+        ci_stmts = get_Csepstatements(G, C)
+
+        if ! (ci_stmts in cones)
+            push!(cones, ci_stmts)
+
+        end
+    end
+
+    return cones
+end
+
+
+# graphs, a list of simple digraphs
+# make a dictionary whose keys are the DAGs in graphs
+# the values are the different CI structures obtained by sampling random matrices C
+# the number of samples per graph is given by `trials`
+function csep_markov_dict(graphs::Vector{SimpleDiGraph}, trials::Int64)
+
+    graph_mps = Dict()
+
+    i = 0
+
+    for G in graphs
+
+        graph_mps[G] = get_cone_reps(G, trials)
+        i += 1
+    end
+
+    if i % 10 == 0
+        print(i)
+    end
+    
+    return graph_mps  
+end
+
+
+# graph_mps, is a dictionary of the form created by csep_markov_dict
+# the output is the set of all possible CI structures produced by C*-separation
+function all_markov_properties(graph_mps)
+
+    return collect(Set(reduce(vcat, values(graph_mps))))
+end
+
+
+# graph_mps, a dictionary of the form produced by csep_markov_dict
+# ci_struct, a list of CI statements of the form [i, j, K]
+# finds all graphs in the dictionary whose markov property under C*-separation is ci_struct
+function find_compatible_graphs(graph_mps, ci_struct, KeepDenseGraphs = false)
+
+    graphs = [G for G in keys(graph_mps) if ci_struct in graph_mps[G]]
+
+    if KeepDenseGraphs 
+        return graphs
+    end
+
+    min_edges = minimum(map(ne, graphs))
+
+    return [G for G in graphs if ne(G) == min_edges]
+end
+
+
+# outputs all triples (i, k, j) such that the induced subgraph G[i,j,k] = i - k - j
+function get_unshielded_triples(G::SimpleGraph)
+
+    triples = []
+
+    for k in vertices(G)
+        for S in powerset(neighbors(G, k), 2)
+            (i, j) = Tuple(S)
+
+            if has_edge(G, i, j)
+                continue
+            end
+
+            push!(triples, (i, k, j))
+        end
+    end
+
+    return triples
+end
+
+
+# stmts, a list of of statements of the form [i, j, K]
+# outputs all triples (i, k, j) such that i -> k <- j is a v-structure based on the statements in stmts
+function find_colliders(G::SimpleGraph, stmts::Vector)
+
+    colliders = []
+
+    for triple in get_unshielded_triples(G)
+
+        (i, k, j) = triple
+
+        k_in_sep_set = false
+
+        for C in stmts
+
+            if Set([i, j]) != Set([C[1], C[2]])
+                continue
+            end
+
+            if k in C[3]
+                k_in_sep_set = true
+                break
+            end
+        end
+
+        if !k_in_sep_set
+            push!(colliders, (i, k, j))
+        end
+    end
+
+    return colliders
+end
+
+
+# G, a simple directed acyclic graph
+# outputs all triples (i, k, j) such that the induced subgraph G[i,j,k] = i -> k <- j
+function find_colliders(G::SimpleDiGraph)
+
+    colliders = []
+
+    for triple in get_unshielded_triples(get_skeleton(G))
+
+        (i, k, j) = triple
+
+        if has_edge(G, i, k) && has_edge(G, j, k)
+
+            push!(colliders, (i, k, j))
+        end
+    end
+
+    return colliders
+end
