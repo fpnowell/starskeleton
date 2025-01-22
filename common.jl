@@ -35,7 +35,7 @@ function graph_to_pdf(H::SimpleGraph, name::String)
     TikzGraphs.save(PDF(name* ".pdf"), t)
 end 
 
-function _graph_from_edges(A::Vector{Tuple{Int64, Int64}})
+function _graph_from_edges(A::Vector)
     n = maximum([max(a[1],a[2]) for a in A ]) 
     D = SimpleGraph(n,0)
     for (i,j) in A 
@@ -44,7 +44,7 @@ function _graph_from_edges(A::Vector{Tuple{Int64, Int64}})
     return D 
 end  
 
-function DAG_from_edges(A::Vector{Tuple{Int64, Int64}})
+function DAG_from_edges(A::Vector)
     n = maximum([max(a[1],a[2]) for a in A ]) 
     D = SimpleDiGraph(n,0)
     for (i,j) in A 
