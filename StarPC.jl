@@ -46,9 +46,12 @@ end
 
 
 # 
-function induced_subgraph(G::CPDAG)
+function induced_subgraph(G::CPDAG, V::Vector)
 
-    # TODO
+    D = [e for e in directed_edges(G) if issubset(e, V)]
+    E = [e for e in undirected_edges(G) if issubset(e, V)]
+
+    cp_dag(D, E)
 end
 
 
@@ -148,6 +151,7 @@ end
 function orient_induced_cycle(G::CPDAG, C::Vector, stmts::Vector)
 
     indC = induced_subgraph(G, C)
+    skel = skeleton(indC)
     coll = colliders(indC)
 
     if length(coll) > 1
@@ -182,29 +186,18 @@ function orient_induced_cycle(G::CPDAG, C::Vector, stmts::Vector)
         end
     end
 
-    cur_node = setdiff(neighbors(skel, k1), [k1])[1]
-    prev_node = k1
     source = k1
 
-    while cur_node != k2
+    for i in setdiff(C, coll[1])
 
-        next_node = setdiff(neighbors(skel, cur_node), [prev_node])[1]
-        
+        (j, l) = neighbors(skel, i)
 
-        if sep_dict[next_node] == 1 && sep_dict[cur_node] == 0
-            
-            source = next_node
+        if length(C) == 4 && sep_dict[i] == 1
+            source = i
+        elseif sep_dict[i] == 1 && sep_dict[j] != sep_dict[l]
+            source = i
             break
         end
-
-        if sep_dict[next_node] == 0 && sep_dict[cur_node] == 1
-
-            source = cur_node
-            break
-        end
-
-        prev_node = cur_node
-        cur_node = next_node
     end
 
     if source == k1
@@ -213,8 +206,8 @@ function orient_induced_cycle(G::CPDAG, C::Vector, stmts::Vector)
     end
 
 
-    D = [e for e in directed_edges(H)]
-    E = [e for e in undirected_edges(H)]
+    D = [e for e in directed_edges(G)]
+    E = [e for e in undirected_edges(G)]
     prev_node = source
     cur_node = neighbors(skel, prev_node)[1]
 
@@ -244,18 +237,13 @@ function orient_induced_cycle(G::CPDAG, C::Vector, stmts::Vector)
 end
 
 
-function orient_cycle_with_source(G, C, source)
-
-    
-    
-    (k1, k, k2) = colliders(induced_subgraph(G, C))[1]
-
-    
-end
-
-
-G = DAG_from_edges([(1, 2), (1, 3), (2, 4), (3, 5), (4, 6), (5, 6)])
-H = cp_dag([(4, 6), (5, 6)], [(1, 2), (1, 3), (2, 4), (3, 5)])
-stmts = get_Csepstatements(G, randomly_sampled_matrix(G))
-coll = colliders(H)
-C = [1,2,3,4,5,6]
+D = [(4, 6), (5, 6)]
+E = [(1, 2), (1, 3), (2, 3), (2, 4), (3, 5), (2, 5)]
+H = DAG_from_edges(vcat(D, E))
+G = cp_dag(D, E)
+C = randomly_sampled_matrix(G)
+Cstar = kleene_star(C)
+stmts = get_Csepstatements(H, C)
+coll = colliders(G)
+V = [2,4,5,6]
+orient_induced_cycle(G, V, stmts)
