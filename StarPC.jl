@@ -1,3 +1,4 @@
+include("main.jl")
 struct CPDAG
 
     vertices::Vector
@@ -148,11 +149,11 @@ function find_colliders(G::CPDAG, stmts::Vector)
 end
 
 
-function orient_induced_cycle(G::CPDAG, C::Vector, stmts::Vector)
+function orient_induced_cycle(G::CPDAG, V::Vector, stmts::Vector)
 
-    indC = induced_subgraph(G, C)
-    skel = skeleton(indC)
-    coll = colliders(indC)
+    indV = induced_subgraph(G, V)
+    skel = skeleton(indV)
+    coll = colliders(indV)
 
     if length(coll) > 1
         return G
@@ -162,7 +163,7 @@ function orient_induced_cycle(G::CPDAG, C::Vector, stmts::Vector)
 
     sep_dict = Dict()
 
-    for i in C
+    for i in V
 
         if i in coll[1]
 
@@ -172,14 +173,14 @@ function orient_induced_cycle(G::CPDAG, C::Vector, stmts::Vector)
 
         for stmt in filter(stmt -> i in stmt && k in stmt, stmts)
 
-            if length(intersect(C, stmt[3])) == 1
+            if length(intersect(V, stmt[3])) == 1
                 sep_dict[i] = 1
                 break
             end
         end
     end
 
-    for i in C
+    for i in V
         
         if !haskey(sep_dict, i)
             sep_dict[i] = 0
@@ -188,22 +189,33 @@ function orient_induced_cycle(G::CPDAG, C::Vector, stmts::Vector)
 
     source = k1
 
-    for i in setdiff(C, coll[1])
+    for i in setdiff(V, coll[1])
 
         (j, l) = neighbors(skel, i)
 
-        if length(C) == 4 && sep_dict[i] == 1
+        if length(V) == 4 && sep_dict[i] == 1
             source = i
+        
+
+
+
         elseif sep_dict[i] == 1 && sep_dict[j] != sep_dict[l]
             source = i
             break
+
+        elseif length(V) == 5 && sep_dict[i] == 1 
+            if length(filter(stmt -> i in stmt && k in stmt && length(intersect(V,stmt[3])) == 1, stmts)) == 2 
+                source = i 
+                break
+            end
+  
         end
     end
 
     if source == k1
         
         return G
-    end
+    end 
 
 
     D = [e for e in directed_edges(G)]
@@ -233,17 +245,50 @@ function orient_induced_cycle(G::CPDAG, C::Vector, stmts::Vector)
         
     end
 
-    return cp_dag(D, setdiff(E, D))
+    return cp_dag(D, setdiff(E, union(D, reverse.(D))))
 end
 
 
-D = [(4, 6), (5, 6)]
-E = [(1, 2), (1, 3), (2, 3), (2, 4), (3, 5), (2, 5)]
+
+
+function find_cycles(G, coll)
+    #TODO: implement a way of checking if the subgraph is an induced cycle
+    (k1, k, k2) = coll 
+    skel = skeleton(induced_subgraph(G, setdiff(vertices(G), [k])))
+    paths = collect(all_simple_paths(skel, k1, k2))
+    for path in paths 
+        push!(path,k)
+        end 
+    return paths 
+end
+
+function HAN(stmts) 
+    #TODO: Given an oracle, write a function which first gets the WTR and then orients all possible edges, outputting a CPDAG. 
+end 
+
+
+function orient_all_cycles(G)
+    colls = colliders(G)
+    M = [find_cycles(G,coll) for coll in colls ]
+end 
+
+D = [(3,5), (4,5)]
+E = [(2,1), (1,3),(4,2)]
 H = DAG_from_edges(vcat(D, E))
 G = cp_dag(D, E)
-C = randomly_sampled_matrix(G)
+C = randomly_sampled_matrix(H)
 Cstar = kleene_star(C)
 stmts = get_Csepstatements(H, C)
 coll = colliders(G)
-V = [2,4,5,6]
-orient_induced_cycle(G, V, stmts)
+V = 1:5
+orient_induced_cycle(G, collect(V), stmts)
+M = find_cycles(G, coll[1])
+
+for V in M 
+    if skeleton(induced_subgraph(G, V)) == _graph_from_edges(push!([(V[i],V[i+1]) for i in 1:(length(V)-1)], (V[1],V[length(V)]))) 
+        G = orient_induced_cycle(G, V, stmts)
+    end 
+end 
+
+
+println(G)
