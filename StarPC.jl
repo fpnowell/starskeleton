@@ -262,10 +262,13 @@ function find_cycles(G, coll)
     return paths 
 end
 
-function HAN(stmts) 
-    #TODO: Given an oracle, write a function which first gets the WTR and then orients all possible edges, outputting a CPDAG. 
-end 
+function PCstar(stmts, n)
+    skel = skel_from_statements(complete_graph(n), stmts) 
+    G = cp_dag([],get_edges(skel)) 
+    find_colliders(G, stmts)
+    M = 
 
+end 
 
 function orient_all_cycles(G)
     colls = colliders(G)
@@ -289,6 +292,7 @@ for V in M
         G = orient_induced_cycle(G, V, stmts)
     end 
 end 
+
 
 
 println(G)
