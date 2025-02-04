@@ -69,3 +69,21 @@ function constant_weights(G::SimpleDiGraph)
 end 
 
 
+function wtr(G::SimpleDiGraph, C)
+    #iterate through edges of G and check whether the edge is the critical path
+    #if this is not the case, remove 
+    G_tr = SimpleDiGraph(nv(G), 0)
+    Cstar = kleene_star(C)
+    for (i,j) in get_edges(G)
+        if C[i,j] == Cstar[i,j]
+            add_edge!(G_tr, i, j)
+        else 
+            Cstar[i,j] = zero(tropical_semiring(max))
+        end 
+    end 
+
+    return G_tr, Cstar
+end 
+
+
+

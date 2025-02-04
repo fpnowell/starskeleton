@@ -69,7 +69,7 @@ function cp_dag(D::Vector, E::Vector)
         (i, k, j) = triple
 
         if (i, k) in D && (j, k) in D
-            
+
             push!(coll, (i, k, j))
         end
     end
@@ -83,7 +83,7 @@ function get_unshielded_triples(G::SimpleGraph)
 
     triples = []
 
-    for k in Graphs.vertices(G)
+    for k in collect(Graphs.vertices(G))
         for S in powerset(neighbors(G, k), 2)
             (i, j) = Tuple(S)
 
@@ -143,9 +143,9 @@ function find_colliders(G::CPDAG, stmts::Vector)
         push!(D, (j, k))
     end
 
-    E = setdiff(undirected_edges(G1), vcat(D, [reverse(e) for e in D]))
+    E = setdiff(undirected_edges(G), vcat(D, [reverse(e) for e in D]))
 
-    return cp_dag(D, E)
+    return cp_dag(unique(D), E)
 end
 
 
@@ -155,6 +155,7 @@ function orient_induced_cycle(G::CPDAG, V::Vector, stmts::Vector)
     skel = skeleton(indV)
     coll = colliders(indV)
 
+    
     if length(coll) > 1
         return G
     end
@@ -204,7 +205,7 @@ function orient_induced_cycle(G::CPDAG, V::Vector, stmts::Vector)
             break
 
         elseif length(V) == 5 && sep_dict[i] == 1 
-            if length(filter(stmt -> i in stmt && k in stmt && length(intersect(V,stmt[3])) == 1, stmts)) == 2 
+            if length(filter(stmt -> i in stmt && k in stmt && length(intersect(V,stmt[3])) == 1 && length(stmt[3]) == minimum([length(t[3]) for t in stmts]), stmts)) == 2 
                 source = i 
                 break
             end
@@ -245,14 +246,14 @@ function orient_induced_cycle(G::CPDAG, V::Vector, stmts::Vector)
         
     end
 
-    return cp_dag(D, setdiff(E, union(D, reverse.(D))))
+    return cp_dag(unique(D), setdiff(E, union(D, reverse.(D))))
 end
 
 
 
 
 function find_cycles(G, coll)
-    #TODO: implement a way of checking if the subgraph is an induced cycle
+    #TODO: this can be optimized
     (k1, k, k2) = coll 
     skel = skeleton(induced_subgraph(G, setdiff(vertices(G), [k])))
     paths = collect(all_simple_paths(skel, k1, k2))
@@ -261,18 +262,44 @@ function find_cycles(G, coll)
         end 
     return paths 
 end
-#= 
-function PCstar(stmts, n)
-    skel = skel_from_statements(complete_graph(n), stmts) 
-    G = cp_dag([],get_edges(skel)) 
-    find_colliders(G, stmts)
-    M = 
 
-end  =#
 
-function orient_all_cycles(G)
-    colls = colliders(G)
-    M = [find_cycles(G,coll) for coll in colls ]
+function find_induced_cycles(G, coll)
+    #Currently, this filters the cycles, returning only those which are not included in a larger induced subcycle. 
+    #Is this correct? 
+    all_cycles = find_cycles(G,coll)
+    sorted_cycles = sort(all_cycles, by=length)
+    
+    minimal_cycles = Vector{}()
+    for s in sorted_cycles
+        if !any(issubset(t,s) for t in minimal_cycles)
+            push!(minimal_cycles, s)
+        end 
+    end 
+    return minimal_cycles
+end
+
+#TODO: I need to somehow sort for cycles containing only one collider. Where do I do this and how? 
+#NEVERMIND: a check for this happens at orient_induced_cycle. 
+
+
+function orient_all_cycles(G, stmts)
+    for coll in colliders(G)
+        cycles = find_induced_cycles(G,coll)
+        for cycle in cycles 
+            G = orient_induced_cycle(G, cycle, stmts)
+        end 
+    end
+    return G 
+end 
+
+function PCstar(n, degbound, stmts) 
+    E = skeleton_edges_from_statements(n, degbound,stmts)
+    G = cp_dag([],E)
+    G = find_colliders(G, stmts)
+    G = orient_all_cycles(G,stmts)
+    return G 
+
 end 
 
 D = [(3,5), (4,5)]

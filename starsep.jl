@@ -1,5 +1,6 @@
 include("starsepbackend.jl")
 
+#TODO: Fix conflicts between Graphs.jl and CPDAG.vertices. 
 
 function get_starsepstatements(H::SimpleDiGraph)
     L = Any[]
@@ -7,7 +8,7 @@ function get_starsepstatements(H::SimpleDiGraph)
     for edge in edges(G);
         i = src(edge)
         j = dst(edge)
-        ne_ij = setdiff(vertices(G), [i,j]) #unlike d-sepstatements, we don't consider only subsets of ne(i) or ne(j)
+        ne_ij = setdiff(collect(Graphs.vertices(G)), [i,j]) #unlike d-sepstatements, we don't consider only subsets of ne(i) or ne(j)
         for K in collect(powerset(ne_ij))
             if starsep(H, i, j, K)
                 push!(L, [i,j,K])

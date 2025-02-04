@@ -10,7 +10,7 @@ v_shape = DAG_from_edges([(1,3),(3,2)])
 
 diamond = DAG_from_edges([(1,2),(1,3),(2,4),(3,4)])
 
-diamondvar = DAG_from_edges([(2,1),(1,3),(3,4),(2,4)])
+diamond_21 = DAG_from_edges([(2,1),(1,3),(3,4),(2,4)])
 
 diamond_14 = DAG_from_edges([(1,2),(1,3),(2,4),(3,4), (1,4)])
 cassio = DAG_from_edges([(1,4),(2,4), (2,5) ,(3,5)])
