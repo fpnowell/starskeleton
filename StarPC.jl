@@ -301,7 +301,7 @@ function PCstar(n, degbound, stmts)
     return G 
 
 end 
-
+#= 
 D = [(3,5), (4,5)]
 E = [(2,1), (1,3),(4,2)]
 H = DAG_from_edges(vcat(D, E))
@@ -313,7 +313,9 @@ coll = colliders(G)
 V = 1:5
 orient_induced_cycle(G, collect(V), stmts)
 M = find_cycles(G, coll[1])
+ =#
 
+ 
 #= for V in M 
     if skeleton(induced_subgraph(G, V)) == _graph_from_edges(push!([(V[i],V[i+1]) for i in 1:(length(V)-1)], (V[1],V[length(V)]))) 
         G = orient_induced_cycle(G, V, stmts)

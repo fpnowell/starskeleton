@@ -69,6 +69,20 @@ function constant_weights(G::SimpleDiGraph)
 end 
 
 
+function randomly_sampled_matrix(G::SimpleDiGraph)
+    n = Graphs.nv(G)
+    C = matrix(tropical_semiring(max), [[zero(tropical_semiring(max)) for i in 1:n] for j in 1:n])
+    for i in 1:n , j in 1:n 
+        if Graphs.has_edge(G, i, j)
+            C[i,j] = rand(1:10000)
+        end 
+    end 
+    return C
+
+end 
+
+
+
 function wtr(G::SimpleDiGraph, C)
     #iterate through edges of G and check whether the edge is the critical path
     #if this is not the case, remove 

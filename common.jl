@@ -73,6 +73,15 @@ function DAG_from_edges(A::Vector)
     return D 
 end  
 
+function DAG_from_edges(n, E)
+    G = SimpleDiGraph(n,0)
+    for edge in E
+        Graphs.add_edge!(G, edge[1],edge[2])
+    end
+    G
+end 
+
+
 
 function generate_random_dag(n::Int, p::Float64)
     G = SimpleDiGraph(n)
@@ -135,4 +144,50 @@ end
 function get_edges(G::SimpleGraph)
     n = nv(G)
     return [(i,j) for i in 1:n, j in 1:n if (has_edge(G,i,j) && i < j)]
+end 
+
+###Modified Erdosz-Reinyi (from Ben's M2 code)
+
+function parental_ER_DAG(n, p)
+    E = []
+    for j in 2:n
+        P = Bernoulli(p*sqrt((n-1)/(j-1))) #this is not always well-defined. Problem?
+        for i in 1:j-1
+            if rand(P)
+                push!(E, (i,j))
+            end 
+        end 
+    end 
+    G = DAG_from_edges(n,E)
+    degs = [indegree(G,i) for i in 1:n] #Do I need this? 
+    exps = exp_indegree(n,p)
+    stdvs = stdv_indegree(n,p)
+    deg_bounds = vcat([(0,0)],[(maximum([0,i-2*j]), i + 2*j) for (i,j) in zip(exps, stdvs)])
+    #check for degree bounds, and connectedness 
+    while !(within_deg_bounds(deg_bounds, G) && is_connected(G))
+        E = []
+        for j in 2:n
+            P = Bernoulli(p*sqrt((n-1)/(j-1)))
+            for i in 1:j-1
+                if rand(P)
+                    push!(E, (i,j))
+                end 
+            end 
+        end 
+    G = DAG_from_edges(E)
+    end  
+    return G 
+end 
+
+function exp_indegree(n,p)
+    return [p*sqrt(j-1)*sqrt(n-1) for j in 2:n]
+
+end 
+
+function stdv_indegree(n,p)
+    return [sqrt((j-1)*p*sqrt((n-1)/(j-1))*(1-p*sqrt((n-1)/(j-1)))) for j in 2:n]
+end 
+
+function within_deg_bounds(deg_bounds, G)
+    return all(indegree(G, j) >= deg_bounds[i][1] && indegree(G, j) <= deg_bounds[i][2] for (i,j) in zip(1:nv(G),1:nv(G)))
 end 
