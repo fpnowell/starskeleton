@@ -322,6 +322,3 @@ M = find_cycles(G, coll[1])
     end 
 end 
  =#
-
-
-println(G)

@@ -24,3 +24,4 @@ stmts3 = get_Csepstatements(trueDAG3, C3)
 G3 = PCstar(10,7,stmts3)
 
 Set(get_edges(wtr(trueDAG3, C3)[1])) == Set(vcat(undirected_edges(G3) ,directed_edges(G3))), ne(trueDAG3), ne(wtr(trueDAG3, C3)[1]), length(directed_edges(G3))
+
