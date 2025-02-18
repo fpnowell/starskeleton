@@ -1,6 +1,7 @@
-# backend for starsep / get_starsepstatements, largely based on Kamillo's implementation
-#It seems to work, although it's quite inefficient compared to dsep. 
 using Graphs, CausalInference
+include("graphfunctions.jl")
+
+#unweighted starseparation 
 
 # Define the types for edges and tagged edges
 struct Edge
@@ -179,3 +180,42 @@ function star_separation(
 
     return K
 end
+
+function starsep(H::SimpleDiGraph, i::Int64, j::Int64, K::Vector{Int64})
+    return in(j, star_separation(H, [i], K))
+end
+
+
+
+##Cseparation 
+
+function Csep(G::SimpleDiGraph, C, K::Vector, i::Int64, j::Int64)
+    if issubset([i,j], K)
+        return false 
+    end 
+    G_star = critical_graph(G, K, C)
+    undirected_G_star = get_skeleton(G_star)
+    paths = collect(all_simple_paths(undirected_G_star, i, j;cutoff = 4)) 
+    bool = true 
+    for p in paths
+        if length(p) == 2 && (Graphs.has_edge(G_star, i,j) || Graphs.has_edge(G_star, j, i))
+            bool = false 
+            break  
+        elseif length(p) == 3 && (is_type_b(G_star, p, K) || is_type_c(G_star, p, K))
+            bool = false 
+            break 
+        elseif length(p) == 4 && is_type_d(G_star, p, K)
+            bool = false 
+            break  
+        elseif length(p) == 5 && is_type_e(G_star, p,K)
+            bool = false 
+            break 
+        else 
+            continue 
+        end 
+    end 
+    return bool 
+end 
+
+Csep(G::SimpleDiGraph, K, i, j) = Csep(G, constant_weights(G), K, i, j )
+

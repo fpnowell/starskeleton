@@ -7,7 +7,7 @@ find_colliders(G1_cp, get_Csepstatements(G1)) #find colliders
 find_cycles(G1_cp, (4,5,6))
 C1 = constant_weights(G1)
 C1[2,1] = 2 
-PCstar(6, 2, get_Csepstatements(G1,C)) #careful, with constant weights we have genericity problems
+PCstar(6, 2, get_Csepstatements(G1,C1)) #careful, with constant weights we have genericity problems
 
 #example 2: unique collider, source at 6
 
