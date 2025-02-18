@@ -1,4 +1,3 @@
-include("main.jl")
 
 collider = DAG_from_edges([(1,3),(2,3)])
 

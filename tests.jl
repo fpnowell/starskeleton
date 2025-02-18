@@ -1,4 +1,5 @@
 include("StarPC.jl")
+include("examples/examplegraphs.jl")
 
 trueDAG = DAG_from_edges([(2,1),(1,3),(2,4),(3,4),(5,1),(5,6),(6,3),(6,7)])
 C = randomly_sampled_matrix(trueDAG)
