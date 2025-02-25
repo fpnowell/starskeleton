@@ -84,8 +84,35 @@ function get_Csepstatements(G::SimpleDiGraph, C)
     return L 
 end 
 
+
 get_Csepstatements(G::SimpleDiGraph) = get_Csepstatements(G, constant_weights(G))
     
+
+function get_Csep_stmts_var(G::SimpleDiGraph, C)
+    L = [] 
+    for K in collect(powerset(Graphs.vertices(G)))
+        for i in setdiff(collect(Graphs.vertices(G)), K), j in 1:i-1
+            if Csep(G,C,K,i,j)
+                push!(L,[j,i,K])
+            end 
+        end 
+    end 
+    return L 
+end 
+
+function get_Csep_stmts_bounded(G::SimpleDiGraph,C, k)
+    L = [] 
+    (G,C) = wtr(G,C)
+    for K in collect(powerset(Graphs.vertices(G),0,k))
+        for i in setdiff(collect(Graphs.vertices(G)), K), j in 1:i-1
+            if Csep(G,C,K,i,j)
+                push!(L,[j,i,K])
+            end 
+        end 
+    end 
+    return L 
+end 
+
 
 
 function Csepstatements_wrt_nodes(G::SimpleDiGraph, C, i, j)

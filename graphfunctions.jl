@@ -1,6 +1,6 @@
 #Generic graph functions functions
 
-using Graphs, TikzGraphs, TikzPictures, Serialization, Combinatorics
+using Graphs, TikzGraphs, TikzPictures, Serialization, Combinatorics, Distributions
 import Oscar: tropical_semiring, zero, matrix, ncols 
 
 ##skeleton retrieval functions 
@@ -91,6 +91,10 @@ function get_edges(G::SimpleGraph)
     return [(i,j) for i in 1:n, j in 1:n if (has_edge(G,i,j) && i < j)]
 end 
 
+function max_in_degree(G::SimpleDiGraph)
+    return maximum([indegree(G,n) for n in Graphs.vertices(G)])
+
+end 
 
 # G, a simple directed acyclic graph
 # outputs all triples (i, k, j) such that the induced subgraph G[i,j,k] = i -> k <- j
@@ -318,6 +322,38 @@ function critical_graph(G::SimpleDiGraph, K::Vector, C)
 
     return Gstar
 end
+
+function reachability_graph(G::SimpleDiGraph, K::Vector)
+    V = Graphs.vertices(G)
+        # make an empty graph which will be our critical graph that we add edges to
+    Gstar = SimpleDiGraph(length(V), 0)
+
+    # loop over every possible edge
+    for e in Iterators.product(V, V)
+
+        (i, j) = e
+
+        if i == j
+            continue
+        end
+
+        # collect paths
+        paths = collect(all_simple_paths(G, i, j))
+        
+        if length(paths) == 0
+            continue
+        end
+
+        # check if any path factors through K
+        # if so we do not add the edge [i, j] otherwise we add it
+        if any(map(p -> any(map(k -> k in p[2:length(p)-1], K)), paths))
+            continue
+        else
+            Graphs.add_edge!(Gstar, (i, j))
+        end
+    end
+    return Gstar
+end 
 
 
 function is_type_b(G::SimpleDiGraph, P::Vector, K::Vector)
@@ -697,3 +733,4 @@ function orient_all_cycles(G, stmts)
     end
     return G 
 end 
+
