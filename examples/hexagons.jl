@@ -1,9 +1,9 @@
-include("StarPC.jl")
+#include("StarPC.jl")
 
 #example 1: unique collider 4->5<-6, source at 1
-G1 = DAG_from_edges([(2,1),(2,3),(1,6),(3,4),(6,5),(4,5)])
+G1 = DAG_from_edges([(1,2),(2,4),(1,3),(3,6),(6,5),(4,5)])
 G1_cp = cp_dag([], get_edges(G1)) #start with skeleton of WTR
-find_colliders(G1_cp, get_Csepstatements(G1)) #find colliders
+find_colliders(G1_cp, get_Csepstatements(G1,randomly_sampled_matrix(G1))) #find colliders
 find_cycles(G1_cp, (4,5,6))
 C1 = constant_weights(G1)
 C1[2,1] = 2 

@@ -77,7 +77,7 @@ function get_Csepstatements(G::SimpleDiGraph, C)
     for i in collect(Graphs.vertices(G)), j in 1:i-1
         for K in collect(powerset(setdiff(Graphs.vertices(G), [i,j])))
             if Csep(G,C,K,i,j)
-                push!(L,[j,i,K])
+                push!(L,[i,j,K])
             end 
         end 
     end 
@@ -102,7 +102,7 @@ end
 
 function get_Csep_stmts_bounded(G::SimpleDiGraph,C, k)
     L = [] 
-    (G,C) = wtr(G,C)
+    #(G,C) = wtr(G,C)
     for K in collect(powerset(Graphs.vertices(G),0,k))
         for i in setdiff(collect(Graphs.vertices(G)), K), j in 1:i-1
             if Csep(G,C,K,i,j)
