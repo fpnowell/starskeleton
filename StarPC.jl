@@ -174,17 +174,6 @@ function orient_all_cycles_var(G::CPDAG, stmts, trueG::SimpleDiGraph, C,degbound
 end 
 
 
-G = parental_ER_DAG(31, 0.05)
-C = randomly_sampled_matrix(G)
-l = max_in_degree(G)
-
-
-G_out = PCstarvar2(G,C,l)
-
-true_CPDAG = cp_dag(get_edges(wtr(G,C)[1]),[])
-
-
-
 
 
 function test_PCstar(G,C,l) 
@@ -318,7 +307,12 @@ function orient_all_cycles_var2(G::CPDAG, stmts::Vector,sinks, trueG::SimpleDiGr
         cycles = find_induced_cycles(G,coll)
         for cycle in cycles 
             G = orient_induced_cycle_var2(G, cycle, stmts,sinks, trueG,C,degbound)
+            if undirected_edges(G) == []
+                break 
+            end 
+
         end 
+
 
     end
     return G 
@@ -341,3 +335,14 @@ function PCstarvar2(G::SimpleDiGraph,C,degbound)
     G_out = orient_all_cycles_var2(G_out, stmts, sinks, G,C,degbound)
     return G_out
 end 
+
+
+
+G = parental_ER_DAG(31, 0.05)
+C = randomly_sampled_matrix(G)
+l = max_in_degree(G)
+
+#G_out = PCstarvar2(G,C,l)
+
+true_CPDAG = cp_dag(get_edges(wtr(G,C)[1]),[])
+

@@ -509,7 +509,7 @@ function get_unshielded_triples(G::SimpleGraph)
         end
     end
 
-    return triples
+    return unique(triples)
 end
 
 
@@ -542,7 +542,7 @@ function find_colliders(G::SimpleGraph, stmts::Vector)
         end
     end
 
-    return colliders
+    return unique(colliders)
 end
 
 
@@ -575,7 +575,7 @@ function find_colliders(G::CPDAG, stmts::Vector)
             push!(colliders, (i, k, j))
         end
     end
-
+    colliders = unique(colliders)
     D = [e for e in directed_edges(G)]
 
     for coll in colliders

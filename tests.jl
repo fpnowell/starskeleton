@@ -50,6 +50,14 @@ G_out = PCstar(20, 4, stmts)
 
 Set(get_edges(wtr(G, C)[1])) == Set(vcat(undirected_edges(G_out) ,directed_edges(G_out))), ne(G), ne(wtr(G, C)[1]), length(directed_edges(G_out))
 
+
+
+
+G_dag = DAG_from_edges([(2,1),(1,3),(2,7),(3,7),(4,6),(5,6),(6,7)])
+C = constant_weights(G_dag)
+
+
+
 #= stmts = get_Csep_stmts_var(G, C)
 k = max_in_degree(G)
 
