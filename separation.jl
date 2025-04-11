@@ -187,16 +187,19 @@ end
 
 
 
-##Cseparation 
+##Function to check for Cstar separation in the sense of Amendola et al (2022)
+
 
 function Csep(G::SimpleDiGraph, C, K::Vector, i::Int64, j::Int64)
     if issubset([i,j], K)
         return false 
     end 
+    #Construct critical/conditional reachability DAG
     G_star = critical_graph(G, K, C)
     undirected_G_star = get_skeleton(G_star)
     paths = collect(all_simple_paths(undirected_G_star, i, j;cutoff = 4)) 
     bool = true 
+    #check for connecting paths of type (a)-(e)
     for p in paths
         if length(p) == 2 && (Graphs.has_edge(G_star, i,j) || Graphs.has_edge(G_star, j, i))
             bool = false 

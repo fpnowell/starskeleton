@@ -1,4 +1,4 @@
-#Generic graph functions functions
+#Generic graph functions. 
 
 using Graphs, TikzGraphs, TikzPictures, Serialization, Combinatorics, Distributions
 import Oscar: tropical_semiring, zero, matrix, ncols 

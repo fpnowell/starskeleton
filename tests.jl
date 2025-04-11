@@ -69,3 +69,20 @@ G_pc_2 = PCstar(15,7,stmts2)
 
 Set(get_edges(wtr(G, C)[1])) == Set(vcat(undirected_edges(G_pc_2) ,directed_edges(G_pc_2))), ne(G), ne(wtr(G, C)[1]), length(directed_edges(G_pc_2))
  =#
+
+
+ G1 = DAG_from_edges([(1,3),(2,3),(4,1),(4,6),(5,6),(5,2)])
+
+ C1 = randomly_sampled_matrix(G1)
+
+ wtr(G1,C1)[1]
+
+ stmts1 = get_Csepstatements(G1, C1)
+
+ G2 = DAG_from_edges([(1,3),(2,3),(1,4),(4,6),(5,6),(2,5)])
+
+ C2 = randomly_sampled_matrix(G2)
+
+ wtr(G2,C2)[1]
+
+ stmts2 = get_Csepstatements(G2, C2)

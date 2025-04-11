@@ -1,17 +1,26 @@
 
+# On 3 nodes
 collider = DAG_from_edges([(1,3),(2,3)])
 
-#dsep(collider, 1, 2, [])
 
-#dsep(collider, 1,2,[3])
+threepath = DAG_from_edges([(1,2),(2,3)])
 
-v_shape = DAG_from_edges([(1,3),(3,2)])
+complete_3DAG = DAG_from_edges([[1,2],[2,3],[1,3]])
+
+# On 4 nodes
 
 diamond = DAG_from_edges([(1,2),(1,3),(2,4),(3,4)])
 
-diamond_21 = DAG_from_edges([(2,1),(1,3),(3,4),(2,4)])
+diamond_var = DAG_from_edges([[1,4],[1,2],[2,3],[3,4]]) #non-unique 1-4 path
 
-diamond_14 = DAG_from_edges([(1,2),(1,3),(2,4),(3,4), (1,4)])
+diamond_double_collider = DAG_from_edges([[1,3],[2,3],[1,4],[2,4]])
+
+diamond__with_14 = DAG_from_edges([(1,2),(1,3),(2,4),(3,4), (1,4)])
+
+complete_4DAG = DAG_from_edges([[1,2],[1,3],[1,4],[2,3],[2,4],[3,4]])
+
+# On >4 nodes 
+
 cassio = DAG_from_edges([(1,4),(2,4), (2,5) ,(3,5)])
 
 longcassio_edges = [(7,6),(6,1),(1,4),(2,4),(2,5),(3,5),(8,3),(9,8)]
@@ -22,8 +31,6 @@ longcassio = DAG_from_edges(longcassio_edges)
 diamondcassio_edges = [(1,4),(2,4), (2,5) ,(3,5), (1,6),(2,6)]
 
 diamondcassio = DAG_from_edges(diamondcassio_edges)
-
-doublecollider = DAG_from_edges([(2,1),(3,1),(2,4),(3,4)])
 
 pyramid =DAG_from_edges([(4,6),(5,6), (1,4),(2,4), (2,5) ,(3,5) ])
 
@@ -41,6 +48,5 @@ cassiovariant = DAG_from_edges([(1,4),(2,4), (2,5) ,(3,5),(4,6), (3,6), (1,7),(7
 
 bigv = DAG_from_edges([(1,4),(2,4), (2,5) ,(3,5),(6,4),(6,5)])
 
-yDAG = DAG_from_edges([(1,4),(2,4),(3,4)])
 
 M = DAG_from_edges([(1,2),(2,3),(4,3),(4,5)])

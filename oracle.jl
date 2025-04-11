@@ -69,6 +69,8 @@ function starsep_statements_wrt_nodes(G::SimpleDiGraph, i::Int64, j::Int64)
     end 
     return output
 end 
+
+
 #Csep statements 
 
 
