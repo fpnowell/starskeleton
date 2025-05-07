@@ -11,9 +11,9 @@ function orient_induced_cycle_var2(G::CPDAG, V::Vector, stmts::Vector, sinks::Ve
         return G
     end
     (k1, k, k2) = coll[1]
-    #add extra statements to stmts
-    
-    K = setdiff(neighbors(G.skeleton, k), union(V,sinks)) #I think I need to change this. I want to condition on all nodes apart from the sinks WHICH FORM A COLLIDER with k
+    #add extra statements to stmts so that cycles can be correctly detected
+    neV = setdiff(unique(collect(Iterators.flatten([neighbors(skeleton(G), v) for v in V ]))), V) 
+    K = filter(x -> all([!((l,x,k) in colliders(G)) for l in V]), neV)
     for i in setdiff(V, coll[1])
         for j in setdiff(V,[i]) 
             K_j = union(K,[j])
@@ -144,4 +144,45 @@ function PCstarvar2(G::SimpleDiGraph,C,degbound)
     sinks = [coll[2] for coll in colliders(G_out)] 
     G_out = orient_all_cycles_var2(G_out, stmts, sinks, G,C,degbound)
     return G_out
+end 
+#= 
+function test_var2(trials, n, p) 
+    i = 0
+    while i < trials 
+
+    G = parental_ER_DAG(n, p)
+    C = randomly_sampled_matrix(G)
+    l = max_in_degree(G)
+
+    G_out1 = PCstar(G,C,l)
+    G_out2 = PCstarvar2(G,C,l)
+    true_CPDAG = cp_dag(get_edges(wtr(G,C)[1]),[])
+    
+    if !all([Set(directed_edges(G_out1)) == Set(directed_edges(G_out2)),  issubset(directed_edges(G_out1), directed_edges(true_CPDAG))])
+        break 
+    else 
+        i += 1 
+
+    end 
+    end  
+        return [i,G]
+
+end  =#
+
+i = 0 
+while i < 20
+
+    G = parental_ER_DAG(7, 0.3)
+    C = randomly_sampled_matrix(G)
+    l = max_in_degree(G)
+    G_out1 = PCstar(G,C,l)
+    G_out2 = PCstarvar2(G,C,l)
+    true_CPDAG = cp_dag(get_edges(wtr(G,C)[1]),[])
+    
+    if !all([Set(directed_edges(G_out1)) == Set(directed_edges(G_out2)),  issubset(directed_edges(G_out1), directed_edges(true_CPDAG))])
+        break 
+    else 
+        i += 1 
+
+    end 
 end 

@@ -10,6 +10,8 @@ function PCstar(n, degbound, stmts)
 
 end 
 
+#PC skeleton: reconstructs edges of skeleton by querying statements on a "need-to-know" basis.
+#outputs collected statements in stmts 
 function PC_skeleton(G::SimpleDiGraph,C, degbound)
     n = Graphs.nv(G)
     E = [] 
@@ -183,35 +185,26 @@ function test_PCstar(G,C,l)
     else 
         G_out1 = PCstar(G,C,l)
 
-        G_out2 = PCstar(Graphs.nv(G), l, get_Csep_stmts_bounded(G,C,l))
-        #G_out2 = cp_dag(get_edges(wtr(G,C)[1]), [])
+        #G_out1 = PCstar(Graphs.nv(G), l, get_Csep_stmts_bounded(G,C,l))
+        G_out2 = cp_dag(get_edges(wtr(G,C)[1]), [])
         #G_out2 = PCstarvar2(G,C,l)
-        return G_out1.skeleton == G_out2.skeleton, G_out1.colliders == G_out2.colliders, G_out1.directed_edges == G_out2.directed_edges
+        return G_out1.skeleton == G_out2.skeleton, G_out1.colliders == G_out2.colliders, issubset(directed_edges(G_out1), directed_edges(G_out2))
     end 
 end 
 
 
 
+i = 0
 
+while i < 100 
 
-#= G = parental_ER_DAG(10, 0.3)
-C = randomly_sampled_matrix(G)
-l = max_in_degree(G)
-
-G_out = PCstar(G,C,l)
-
-true_CPDAG = cp_dag(get_edges(wtr(G,C)[1]),[])
- =#
-#= i = 0 
-
-while i < 10 
-
-    G = parental_ER_DAG(10, 0.3)
+    G = parental_ER_DAG(6, 0.3)
     C = randomly_sampled_matrix(G)
     l = max_in_degree(G)
     if !all(test_PCstar(G,C,l))
+        serialize(G, "counterex.jls")
         break 
     else 
         i += 1 
     end 
-end  =#
+end  
