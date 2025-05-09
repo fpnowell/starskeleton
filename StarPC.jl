@@ -31,7 +31,7 @@ function PC_skeleton(G::SimpleDiGraph,C, degbound)
 end 
 
 #modified PCstar which queries the oracle as needed
-function PCstar(G::SimpleDiGraph,C,degbound)
+function PCstar(G::SimpleDiGraph,C,degbound;orient_cycles = false)
     (E, stmts) = PC_skeleton(G,C,degbound)
     G_out = cp_dag([],E)
     for triple in get_unshielded_triples(G_out)
@@ -42,7 +42,9 @@ function PCstar(G::SimpleDiGraph,C,degbound)
             end 
     end 
     G_out = find_colliders(G_out,stmts)
-    G_out = orient_all_cycles(G_out, stmts, G,C,degbound)
+    if orient_cycles 
+        G_out = orient_all_cycles(G_out, stmts, G,C,degbound)
+    end 
     return G_out
 end 
 
@@ -203,8 +205,6 @@ G_out = PCstar(G,C,l)
 true_CPDAG = cp_dag(get_edges(wtr(G,C)[1]),[])
  =#
 i = 0 
-
-#TODO: Do some tests for correctness of (current) PC 
 while i < 10
     G = parental_ER_DAG(10, 0.3)
     C = randomly_sampled_matrix(G)
@@ -216,7 +216,7 @@ while i < 10
     end 
 end 
 
-G = parental_ER_DAG(20,0.1)
+G = parental_ER_DAG(20,0.09)
 C = randomly_sampled_matrix(G)
 l = max_in_degree(G) #3 
 
