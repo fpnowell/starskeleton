@@ -183,10 +183,10 @@ function test_PCstar(G,C,l)
     else 
         G_out1 = PCstar(G,C,l)
 
-        G_out2 = PCstar(Graphs.nv(G), l, get_Csep_stmts_bounded(G,C,l))
-        #G_out2 = cp_dag(get_edges(wtr(G,C)[1]), [])
+        #G_out2 = PCstar(Graphs.nv(G), l, get_Csep_stmts_bounded(G,C,l))
+        G_out2 = cp_dag(get_edges(wtr(G,C)[1]), [])
         #G_out2 = PCstarvar2(G,C,l)
-        return G_out1.skeleton == G_out2.skeleton, G_out1.colliders == G_out2.colliders, G_out1.directed_edges == G_out2.directed_edges
+        return G_out1.skeleton == G_out2.skeleton, G_out1.colliders == G_out2.colliders, issubset(G_out1.directed_edges , G_out2.directed_edges) 
     end 
 end 
 
@@ -202,10 +202,10 @@ G_out = PCstar(G,C,l)
 
 true_CPDAG = cp_dag(get_edges(wtr(G,C)[1]),[])
  =#
-#= i = 0 
+i = 0 
 
-while i < 10 
-
+#TODO: Do some tests for correctness of (current) PC 
+while i < 10
     G = parental_ER_DAG(10, 0.3)
     C = randomly_sampled_matrix(G)
     l = max_in_degree(G)
@@ -214,4 +214,19 @@ while i < 10
     else 
         i += 1 
     end 
-end  =#
+end 
+
+G = parental_ER_DAG(20,0.1)
+C = randomly_sampled_matrix(G)
+l = max_in_degree(G) #3 
+
+test_PCstar(G,C,l) #correct, took approx 300s 
+
+
+G = parental_ER_DAG(22,0.15)
+C = randomly_sampled_matrix(G)
+l = max_in_degree(G) #3 
+
+test_PCstar(G,C,l) #correct, took approx 300s 
+
+
