@@ -1,22 +1,20 @@
 include("StarPC.jl")
 
-function orient_induced_cycle_var2(G::CPDAG, V::Vector, stmts::Vector, sinks::Vector, trueG::SimpleDiGraph, C,degbound)
+function orient_induced_cycle_var2(G::CPDAG, V::Vector, stmts::Vector, sep_sets::Dict, trueG::SimpleDiGraph, C,degbound)
 
     indV = induced_subgraph(G, V)
     skel = skeleton(indV)
     coll = colliders(indV)
-
+    sepset = sep_sets 
     
     if length(coll) > 1
         return G
     end
     (k1, k, k2) = coll[1]
     #add extra statements to stmts so that cycles can be correctly detected
-    neV = setdiff(unique(collect(Iterators.flatten([neighbors(skeleton(G), v) for v in V ]))), V) 
-    K = filter(x -> all([!((l,x,k) in colliders(G)) for l in V]), neV)
     for i in setdiff(V, coll[1])
         for j in setdiff(V,[i]) 
-            K_j = union(K,[j])
+            K_j = union(setdiff(sepset[min(i,k),max(i,k)], V) ,[j])
             if Csep(trueG,C,K_j,i,k)
                 #push!(stmts, [i,k,K_j])
                 push!(stmts,[minimum([k,i]),maximum([k,i]),K_j])
@@ -112,11 +110,11 @@ function orient_induced_cycle_var2(G::CPDAG, V::Vector, stmts::Vector, sinks::Ve
 end
 
 
-function orient_all_cycles_var2(G::CPDAG, stmts::Vector,sinks, trueG::SimpleDiGraph, C,degbound)
+function orient_all_cycles_var2(G::CPDAG, stmts::Vector,sep_sets::Dict, trueG::SimpleDiGraph, C,degbound)
     for coll in colliders(G)
         cycles = find_induced_cycles(G,coll)
         for cycle in cycles 
-            G = orient_induced_cycle_var2(G, cycle, stmts,sinks, trueG,C,degbound)
+            G = orient_induced_cycle_var2(G, cycle, stmts,sep_sets, trueG,C,degbound)
             if undirected_edges(G) == []
                 break 
             end 
@@ -131,7 +129,7 @@ end
 
 
 function PCstarvar2(G::SimpleDiGraph,C,degbound)
-    (E, stmts) = PC_skeleton(G,C,degbound)
+    (E, stmts, sep_sets) = PC_skeleton(G,C,degbound)
     G_out = cp_dag([],E)
     for triple in get_unshielded_triples(G_out)
         (i,k,j) = triple 
@@ -141,8 +139,8 @@ function PCstarvar2(G::SimpleDiGraph,C,degbound)
             end 
     end 
     G_out = find_colliders(G_out,stmts)
-    sinks = [coll[2] for coll in colliders(G_out)] 
-    G_out = orient_all_cycles_var2(G_out, stmts, sinks, G,C,degbound)
+    #sinks = [coll[2] for coll in colliders(G_out)] 
+    G_out = orient_all_cycles_var2(G_out, stmts, sep_sets, G,C,degbound)
     return G_out
 end 
 #= 
@@ -170,19 +168,41 @@ function test_var2(trials, n, p)
 end  =#
 
 i = 0 
-while i < 20
+while i < 100
 
-    G = parental_ER_DAG(7, 0.3)
+    G = parental_ER_DAG(8, 0.3)
     C = randomly_sampled_matrix(G)
     l = max_in_degree(G)
     G_out1 = PCstar(G,C,l)
     G_out2 = PCstarvar2(G,C,l)
     true_CPDAG = cp_dag(get_edges(wtr(G,C)[1]),[])
     
-    if !all([Set(directed_edges(G_out1)) == Set(directed_edges(G_out2)),  issubset(directed_edges(G_out1), directed_edges(true_CPDAG))])
+    if !all([Set(directed_edges(G_out1)) == Set(directed_edges(G_out2)),  issubset(directed_edges(G_out2), directed_edges(true_CPDAG))])
         break 
     else 
         i += 1 
 
     end 
 end 
+
+G = parental_ER_DAG(31, 0.05)
+C = randomly_sampled_matrix(G)
+l = max_in_degree(G)
+#G_out1 = PCstar(G,C,l)
+G_out2 = PCstarvar2(G,C,l)
+true_CPDAG = cp_dag(get_edges(wtr(G,C)[1]),[])
+
+#TODO: write a function to see if cycles are oriented? 
+
+DAG_to_pdf(DAG_from_edges(directed_edges(true_CPDAG)), "show")
+L = [] 
+
+for coll in colliders(true_CPDAG)
+    cycles = find_induced_cycles(true_CPDAG, coll)
+    for cycle in cycles 
+        push!(L, cycle)
+    end 
+end 
+
+#Comment: In this one example, it doesn't seem like any cycles are being oriented. 
+#This is because there were no orientable cycles to begin with! So in a sense it's "all good" 

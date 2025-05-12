@@ -12,29 +12,34 @@ end
 
 #PC skeleton: reconstructs edges of skeleton by querying statements on a "need-to-know" basis.
 #outputs collected statements in stmts 
-function PC_skeleton(G::SimpleDiGraph,C, degbound)
+function PC_skeleton(G::SimpleDiGraph, C, degbound)
     n = Graphs.nv(G)
-    E = [] 
+    E = []
     stmts = []
-    for i in 1:n, j in 1:(i-1) 
-        separated = false 
-        for K in collect(powerset(setdiff(1:n,[i,j]),0,degbound))
-            if Csep(G,C,K,i,j)
-                push!(stmts,[j,i,K])
-                separated = true 
-                break 
-            end 
-        end 
-        if !separated 
-            push!(E, (j,i))
-        end 
-    end 
-    return unique(E), stmts
-end 
+    sep_sets = Dict{Tuple{Int, Int}, Vector{Int}}()
+
+    for i in 1:n, j in 1:(i-1)
+        separated = false
+        for K in collect(powerset(setdiff(1:n, [i, j]), 0, degbound))
+            if Csep(G, C, K, i, j)
+                push!(stmts, [j, i, K])
+                sep_sets[(min(i, j), max(i, j))] = K
+                separated = true
+                break
+            end
+        end
+        if !separated
+            push!(E, (j, i))
+        end
+    end
+
+    return unique(E), stmts, sep_sets
+end
+
 
 #modified PCstar which queries the oracle as needed
 function PCstar(G::SimpleDiGraph,C,degbound)
-    (E, stmts) = PC_skeleton(G,C,degbound)
+    (E, stmts, sep_sets) = PC_skeleton(G,C,degbound)
     G_out = cp_dag([],E)
     for triple in get_unshielded_triples(G_out)
         (i,k,j) = triple 
@@ -194,7 +199,7 @@ end
 
 
 
-i = 0
+#= i = 0
 
 while i < 100 
 
@@ -207,4 +212,4 @@ while i < 100
     else 
         i += 1 
     end 
-end  
+end   =#
