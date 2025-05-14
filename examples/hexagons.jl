@@ -7,7 +7,8 @@ C1 = randomly_sampled_matrix(G1)
 find_colliders(G1_cp, get_Csepstatements(G1,randomly_sampled_matrix(G1))) #find colliders
 find_cycles(G1_cp, (4,5,6))
 PCstar(6, 2, get_Csepstatements(G1,C1)) #careful, with constant weights we have genericity problems
-
+PCstarvar2(G1, C1, 2)
+PCstar(G1, C1, 2)
 #example 2: unique collider, source at 6
 
 G2 = DAG_from_edges([(1,2),(2,3),(6,1),(3,4),(6,5),(4,5)])
@@ -18,7 +19,7 @@ G2_cp = cp_dag([], get_edges(G2)) #start with skeleton of WTR
 G2stmts = get_Csepstatements(G2,C2)
 
 PCstar(6,2,get_Csepstatements(G2,C2))
-
+PCstar(G2, C2, 2)
 #example 3, source at 4
 
 G3 = DAG_from_edges([(2,1),(3,2),(1,6),(4,3),(6,5),(4,5)])

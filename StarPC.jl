@@ -29,7 +29,8 @@ function PC_skeleton(G::SimpleDiGraph, C, degbound)
             end
         end
         if !separated
-            push!(E, (j, i))
+            push!(E, (min(i,j),max(i,j)))
+            sep_sets[min(i,j),max(i,j)] = []
         end
     end
 

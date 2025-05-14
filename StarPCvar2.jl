@@ -167,16 +167,18 @@ function test_var2(trials, n, p)
 
 end  =#
 
-i = 0 
-while i < 100
+#TODO: write a function which puts this in a table. 
 
-    G = parental_ER_DAG(8, 0.3)
+i = 0 
+while i < 5
+
+    G = parental_ER_DAG(10, 0.3)
     C = randomly_sampled_matrix(G)
     l = max_in_degree(G)
     G_out1 = PCstar(G,C,l)
     G_out2 = PCstarvar2(G,C,l)
     true_CPDAG = cp_dag(get_edges(wtr(G,C)[1]),[])
-    
+    results = []
     if !all([Set(directed_edges(G_out1)) == Set(directed_edges(G_out2)),  issubset(directed_edges(G_out2), directed_edges(true_CPDAG))])
         break 
     else 
@@ -185,16 +187,20 @@ while i < 100
     end 
 end 
 
-G = parental_ER_DAG(31, 0.05)
+#= G = parental_ER_DAG(24, 0.08)
 C = randomly_sampled_matrix(G)
 l = max_in_degree(G)
-#G_out1 = PCstar(G,C,l)
+G_out1 = PCstar(G,C,l)
 G_out2 = PCstarvar2(G,C,l)
 true_CPDAG = cp_dag(get_edges(wtr(G,C)[1]),[])
 
 #TODO: write a function to see if cycles are oriented? 
 
 DAG_to_pdf(DAG_from_edges(directed_edges(true_CPDAG)), "show")
+
+
+unique(collect(Iterators.flatten(colliders(G_out2)))) == unique(collect(Iterators.flatten([Iterators.flatten(e) for e in directed_edges(G_out2)])))
+
 L = [] 
 
 for coll in colliders(true_CPDAG)
@@ -203,6 +209,25 @@ for coll in colliders(true_CPDAG)
         push!(L, cycle)
     end 
 end 
+H = []
+for cycle in L 
+    if length(intersect(cycle, unique(collect(Iterators.flatten(colliders(G_out2)))))) == 3
+        push!(H, cycle)
+    end 
+end  =#
 
 #Comment: In this one example, it doesn't seem like any cycles are being oriented. 
 #This is because there were no orientable cycles to begin with! So in a sense it's "all good" 
+
+#PLAN for benchmarks: --- #nodes    #degree     #trials
+#                            10          3          1000
+#                            10          4          1000
+#                            10          5          1000
+#                            15          3          100       
+#                            15          4          100
+#                            15          5          100
+#                            24          3          10
+#                            24          4          10 
+#                            24          5??        10 
+#                            31         3           3
+#                           ... However many you manage to do.    
