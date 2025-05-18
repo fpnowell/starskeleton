@@ -128,7 +128,7 @@ function orient_all_cycles_var2(G::CPDAG, stmts::Vector,sep_sets::Dict, trueG::S
 end 
 
 
-function PCstarvar2(G::SimpleDiGraph,C,degbound)
+function PCstarvar2(G::SimpleDiGraph,C,degbound; orient_cycles = false )
     (E, stmts, sep_sets) = PC_skeleton(G,C,degbound)
     G_out = cp_dag([],E)
     for triple in get_unshielded_triples(G_out)
@@ -140,8 +140,10 @@ function PCstarvar2(G::SimpleDiGraph,C,degbound)
     end 
     G_out = find_colliders(G_out,stmts)
     #sinks = [coll[2] for coll in colliders(G_out)] 
-    G_out = orient_all_cycles_var2(G_out, stmts, sep_sets, G,C,degbound)
-    return G_out
+    if orient_cycles
+        G_out = orient_all_cycles_var2(G_out, stmts, sep_sets, G,C,degbound)
+    end 
+    return G_out, stmts, sep_sets, G, C, degbound 
 end 
 #= 
 function test_var2(trials, n, p) 
@@ -168,15 +170,15 @@ function test_var2(trials, n, p)
 end  =#
 
 #TODO: write a function which puts this in a table. 
-
+#= 
 i = 0 
 while i < 5
 
     G = parental_ER_DAG(10, 0.3)
     C = randomly_sampled_matrix(G)
     l = max_in_degree(G)
-    G_out1 = PCstar(G,C,l)
-    G_out2 = PCstarvar2(G,C,l)
+    G_out1 = PCstarvar2(G,C,l;orient_all_cycles = false )
+    G_out2 = PCstarvar2(G,C,l;orient_all_cycles = true)
     true_CPDAG = cp_dag(get_edges(wtr(G,C)[1]),[])
     results = []
     if !all([Set(directed_edges(G_out1)) == Set(directed_edges(G_out2)),  issubset(directed_edges(G_out2), directed_edges(true_CPDAG))])
@@ -186,7 +188,7 @@ while i < 5
 
     end 
 end 
-
+ =#
 #= G = parental_ER_DAG(24, 0.08)
 C = randomly_sampled_matrix(G)
 l = max_in_degree(G)
