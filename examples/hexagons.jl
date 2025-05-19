@@ -35,13 +35,13 @@ PCstar(6,2, G3stmts)
 
 #example 4: two colliders 
 
-G4 = DAG_from_edges([(6,5),(6,1),(1,2),(3,2),(3,4),(4,5)])
-
+G4 = DAG_from_edges([(6,5),(1,6),(1,2),(2,3),(3,4),(4,5)])
+C4 = randomly_sampled_matrix(G4)
 G4_cp = cp_dag([],get_edges(G4))
 
-G4stmts = get_Csepstatements(G4)
+stmts = get_Csepstatements(G4)
 
-PCstar(6,2,G4stmts)
+PCstar(6,2,stmts)
 
 
 G5 = DAG_from_edges([(6,5),(1,6),(1,2),(3,2),(4,3),(4,5)])
