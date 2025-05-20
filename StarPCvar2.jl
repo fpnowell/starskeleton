@@ -28,19 +28,12 @@ function orient_induced_cycle_var2(G::CPDAG, V::Vector, stmts::Vector, sep_sets:
 
         if i in coll[1]
 
-            sep_dict[i] = 1
+            sep_dict[i] = 0
             continue
-        end
-
-        for stmt in filter(stmt -> i in stmt && k in stmt, stmts)
-
-            if length(intersect(V, stmt[3])) == 1
-                sep_dict[i] = 1
-                break
-            end
-        end
-    end
-
+        else 
+            sep_dict[i] = length(unique(filter(stmt -> i in stmt && k in stmt && length(intersect(V, stmt[3])) == 1 , stmts)))
+        end 
+    end 
     for i in V
         
         if !haskey(sep_dict, i)
@@ -48,30 +41,11 @@ function orient_induced_cycle_var2(G::CPDAG, V::Vector, stmts::Vector, sep_sets:
         end
     end
 
-    source = k1
-
-    for i in setdiff(V, coll[1])
-
-        (j, l) = neighbors(skel, i)
-
-        if length(V) == 4 && sep_dict[i] == 1
-            source = i
-        
-
-
-
-        elseif sep_dict[i] == 1 && sep_dict[j] != sep_dict[l]
-            source = i
-            break
-
-        elseif length(V) == 5 && sep_dict[i] == 1 
-            if length(filter(stmt -> i in stmt && k in stmt && length(intersect(V,stmt[3])) == 1 && length(stmt[3]) == minimum([length(t[3]) for t in stmts]), stmts)) == 2 
-                source = i 
-                break
-            end
-  
-        end
-    end
+    if all(x -> x == 0 , keys(sep_dict))
+        source = coll[1][1] 
+    else 
+        source = findmax(sep_dict)[2]
+    end 
 
     if source == k1
         
@@ -145,6 +119,7 @@ function PCstarvar2(G::SimpleDiGraph,C,degbound; orient_cycles = false )
     end 
     return G_out, stmts, sep_sets, G, C, degbound 
 end 
+
 #= 
 function test_var2(trials, n, p) 
     i = 0
@@ -155,7 +130,7 @@ function test_var2(trials, n, p)
     l = max_in_degree(G)
 
     G_out1 = PCstar(G,C,l)
-    G_out2 = PCstarvar2(G,C,l)
+    G_out2 = PCstarvar2(G,C,l;orient_cycles = true)[1]
     true_CPDAG = cp_dag(get_edges(wtr(G,C)[1]),[])
     
     if !all([Set(directed_edges(G_out1)) == Set(directed_edges(G_out2)),  issubset(directed_edges(G_out1), directed_edges(true_CPDAG))])
@@ -165,9 +140,9 @@ function test_var2(trials, n, p)
 
     end 
     end  
-        return [i,G]
+    return i
 
-end  =#
+end   =#
 
 #TODO: write a function which puts this in a table. 
 #= 
