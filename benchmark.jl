@@ -51,10 +51,10 @@ end
 threeDAGs= []
 i = 0 
 while i < 100
-    G = parental_ER_DAG(15, 0.2)
+    G = parental_ER_DAG(7,0.4)
     C = randomly_sampled_matrix(G)
     l = max_in_degree(G)
-    if l == 3 
+    if l == 3
         push!(threeDAGs, [G,C,l])
         i+= 1
     end 

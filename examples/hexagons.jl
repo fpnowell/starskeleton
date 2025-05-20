@@ -38,12 +38,16 @@ PCstar(6,2, G3stmts)
 G4 = DAG_from_edges([[1,2,[2,3],[3,4],[4,6],[1,5],[5,6]])
 C4 = randomly_sampled_matrix(G4)
 
+G4 = DAG_from_edges([(6,5),(1,6),(1,2),(2,3),(3,4),(4,5)])
+C4 = randomly_sampled_matrix(G4)
 G4_cp = cp_dag([],get_edges(G4))
 
 G4stmts = get_Csepstatements(G4,C4)
+stmts = get_Csepstatements(G4)
 
 PCstar(6,2, G4stmts)
 PCstarvar2(G4,C4, 2; orient_cycles = true)
+PCstar(6,2,stmts)
 
 
 G5 = DAG_from_edges([(6,5),(1,6),(1,2),(3,2),(4,3),(4,5)])

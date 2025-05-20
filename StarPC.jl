@@ -22,7 +22,7 @@ function PC_skeleton(G::SimpleDiGraph, C, degbound)
         separated = false
         for K in collect(powerset(setdiff(1:n, [i, j]), 0, degbound))
             if Csep(G, C, K, i, j)
-                push!(stmts, [j, i, K])
+                push!(stmts, [minimum([i,j]), maximum([i,j]), K])
                 sep_sets[(min(i, j), max(i, j))] = K
                 separated = true
                 break
@@ -49,6 +49,7 @@ function PCstar(G::SimpleDiGraph,C,degbound)
                 push!(stmts,[minimum([i,j]),maximum([i,j]),K])
             end 
     end 
+    stmts = unique(stmts)
     G_out = find_colliders(G_out,stmts)
     G_out = orient_all_cycles(G_out, stmts, G,C,degbound)
     return G_out
@@ -90,19 +91,12 @@ function orient_induced_cycle(G::CPDAG, V::Vector, stmts::Vector, trueG::SimpleD
 
         if i in coll[1]
 
-            sep_dict[i] = 1
+            sep_dict[i] = 0
             continue
-        end
-
-        for stmt in filter(stmt -> i in stmt && k in stmt, stmts)
-
-            if length(intersect(V, stmt[3])) == 1
-                sep_dict[i] = 1
-                break
-            end
-        end
-    end
-
+        else 
+            sep_dict[i] = length(unique(filter(stmt -> i in stmt && k in stmt && length(intersect(V, stmt[3])) == 1 , stmts)))
+        end 
+    end 
     for i in V
         
         if !haskey(sep_dict, i)
@@ -110,30 +104,11 @@ function orient_induced_cycle(G::CPDAG, V::Vector, stmts::Vector, trueG::SimpleD
         end
     end
 
-    source = k1
-
-    for i in setdiff(V, coll[1])
-
-        (j, l) = neighbors(skel, i)
-
-        if length(V) == 4 && sep_dict[i] == 1
-            source = i
-        
-
-
-
-        elseif sep_dict[i] == 1 && sep_dict[j] != sep_dict[l]
-            source = i
-            break
-
-        elseif length(V) == 5 && sep_dict[i] == 1 
-            if length(filter(stmt -> i in stmt && k in stmt && length(intersect(V,stmt[3])) == 1 && length(stmt[3]) == minimum([length(t[3]) for t in stmts]), stmts)) == 2 
-                source = i 
-                break
-            end
-  
-        end
-    end
+    if all(x -> x == 0 , keys(sep_dict))
+        source = coll[1][1] 
+    else 
+        source = findmax(sep_dict)[2]
+    end 
 
     if source == k1
         
