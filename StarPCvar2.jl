@@ -1,23 +1,22 @@
 include("StarPC.jl")
 #Orients an orientable cycle by querying the oracle as necessary
-function orient_induced_cycle_var2(G_out::CPDAG, V::Vector, stmts::Vector, sep_sets::Dict, trueG::SimpleDiGraph, C,degbound)
+function orient_induced_cycle_var2(G_out::CPDAG, V::Vector, G::SimpleDiGraph, C,degbound)
 
     indV = induced_subgraph(G_out, V)
     skel = skeleton(indV)
     coll = colliders(indV)
-    sepset = sep_sets 
     
     if length(coll) > 1
         return G_out
     end
     (k1, k, k2) = coll[1]
+    stmts = [] 
     #add extra statements to stmts so that cycles can be correctly detected
-    #K = setdiff(collect(Graphs.vertices(trueG)), V)
+    K = setdiff(collect(Graphs.vertices(G)), V)
     for i in setdiff(V, coll[1])
         for j in setdiff(V,[i]) 
-            K_j = union(setdiff(sepset[min(i,k),max(i,k)], V) ,[j])
-            #K_j = union(K,[j])
-            if Csep(trueG,C,K_j,i,k)
+            K_j = union(K,[j])
+            if Csep(G,C,K_j,i,k)
                 #push!(stmts, [i,k,K_j])
                 push!(stmts,[minimum([k,i]),maximum([k,i]),K_j])
             end 
@@ -85,12 +84,12 @@ function orient_induced_cycle_var2(G_out::CPDAG, V::Vector, stmts::Vector, sep_s
     return cp_dag(unique(D), setdiff(E, union(D, reverse.(D))))
 end
 
-function orient_all_cycles_var2(G::CPDAG, stmts::Vector,sep_sets::Dict, trueG::SimpleDiGraph, C,degbound)
-    for coll in colliders(G)
-        cycles = find_induced_cycles(G,coll)
+function orient_all_cycles_var2(G_out::CPDAG, G::SimpleDiGraph, C,degbound)
+    for coll in colliders(G_out)
+        cycles = find_induced_cycles(G_out,coll)
         for cycle in cycles 
-            G = orient_induced_cycle_var2(G, cycle, stmts,sep_sets, trueG,C,degbound)
-            if undirected_edges(G) == []
+            G = orient_induced_cycle_var2(G_out, cycle, G,C,degbound)
+            if undirected_edges(G_out) == []
                 break 
             end 
 
@@ -116,7 +115,7 @@ function PCstarvar2(G::SimpleDiGraph,C,degbound; orient_cycles = false )
     G_out = find_colliders(G_out,stmts)
     #sinks = [coll[2] for coll in colliders(G_out)] 
     if orient_cycles
-        G_out = orient_all_cycles_var2(G_out, stmts, sep_sets, G,C,degbound)
+        G_out = orient_all_cycles_var2(G_out, G,C,degbound)
     end 
     return G_out, stmts, sep_sets, G, C, degbound 
 end 
