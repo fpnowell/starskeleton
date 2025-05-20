@@ -1,5 +1,5 @@
 include("StarPC.jl")
-
+#Orients an orientable cycle by querying the oracle as necessary
 function orient_induced_cycle_var2(G::CPDAG, V::Vector, stmts::Vector, sep_sets::Dict, trueG::SimpleDiGraph, C,degbound)
 
     indV = induced_subgraph(G, V)
@@ -12,9 +12,11 @@ function orient_induced_cycle_var2(G::CPDAG, V::Vector, stmts::Vector, sep_sets:
     end
     (k1, k, k2) = coll[1]
     #add extra statements to stmts so that cycles can be correctly detected
+    K = setdiff(collect(Graphs.vertices(trueG)), V)
     for i in setdiff(V, coll[1])
         for j in setdiff(V,[i]) 
-            K_j = union(setdiff(sepset[min(i,k),max(i,k)], V) ,[j])
+            #K_j = union(setdiff(sepset[min(i,k),max(i,k)], V) ,[j])
+            K_j = union(K,[j])
             if Csep(trueG,C,K_j,i,k)
                 #push!(stmts, [i,k,K_j])
                 push!(stmts,[minimum([k,i]),maximum([k,i]),K_j])
@@ -120,7 +122,7 @@ function PCstarvar2(G::SimpleDiGraph,C,degbound; orient_cycles = false )
     return G_out, stmts, sep_sets, G, C, degbound 
 end 
 
-#= 
+
 function test_var2(trials, n, p) 
     i = 0
     while i < trials 
@@ -142,7 +144,7 @@ function test_var2(trials, n, p)
     end  
     return i
 
-end   =#
+end   
 
 #TODO: write a function which puts this in a table. 
 #= 

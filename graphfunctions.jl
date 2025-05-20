@@ -592,7 +592,7 @@ end
 
 ##Cycle orientation functions 
 
-
+#this function orients the induced cycle G[V] given the full (bounded) set of Csepstatements
 function orient_induced_cycle(G::CPDAG, V::Vector, stmts::Vector)
 
     indV = induced_subgraph(G, V)
@@ -688,13 +688,21 @@ function find_induced_cycles(G, coll)
     all_cycles = find_cycles(G,coll)
     sorted_cycles = sort(all_cycles, by=length)
     
-    minimal_cycles = Vector{}()
+    minimal_cycles = Vector{}() #inclusion minimal cycles
     for s in sorted_cycles
         if !any(issubset(t,s) for t in minimal_cycles)
             push!(minimal_cycles, s)
         end 
     end 
-    return minimal_cycles
+    #an inclusion minimal cycle will be induced if it contains |V| edges
+    induced_cycles = Vector{}()
+    for V in minimal_cycles 
+        indV = induced_subgraph(G,V)
+        if length(directed_edges(indV)) + length(undirected_edges(indV)) == length(V) && all(x -> degree(skeleton(G),x) ==2, V)
+            push!(induced_cycles, V)
+        end 
+    end 
+    return induced_cycles
 end
 
 

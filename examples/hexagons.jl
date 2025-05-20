@@ -9,9 +9,9 @@ find_cycles(G1_cp, (4,5,6))
 PCstar(6, 2, get_Csepstatements(G1,C1)) #careful, with constant weights we have genericity problems
 PCstarvar2(G1, C1, 2, orient_cycles = true)
 PCstar(G1, C1, 2)
-#example 2: unique collider, source at 6
+#example 2: unique collider, source at 1 but with two unequal length paths
 
-G2 = DAG_from_edges([(1,2),(2,3),(6,1),(3,4),(6,5),(4,5)])
+G2 = DAG_from_edges([(1,2),(2,3),(1,6),(3,4),(6,5),(4,5)])
 C2 = randomly_sampled_matrix(G2)
 C2[6,5] = 100000 #make sure that 65 is critical 
 G2_cp = cp_dag([], get_edges(G2)) #start with skeleton of WTR
@@ -35,7 +35,7 @@ PCstar(6,2, G3stmts)
 
 #example 4: two colliders 
 
-G4 = DAG_from_edges([[1,2,[2,3],[3,4],[4,6],[1,5],[5,6]])
+G4 = DAG_from_edges([[1,2],[2,3],[3,4],[4,6],[1,5],[5,6]])
 C4 = randomly_sampled_matrix(G4)
 
 G4 = DAG_from_edges([(6,5),(1,6),(1,2),(2,3),(3,4),(4,5)])
