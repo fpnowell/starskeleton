@@ -1,22 +1,22 @@
 include("StarPC.jl")
 #Orients an orientable cycle by querying the oracle as necessary
-function orient_induced_cycle_var2(G::CPDAG, V::Vector, stmts::Vector, sep_sets::Dict, trueG::SimpleDiGraph, C,degbound)
+function orient_induced_cycle_var2(G_out::CPDAG, V::Vector, stmts::Vector, sep_sets::Dict, trueG::SimpleDiGraph, C,degbound)
 
-    indV = induced_subgraph(G, V)
+    indV = induced_subgraph(G_out, V)
     skel = skeleton(indV)
     coll = colliders(indV)
     sepset = sep_sets 
     
     if length(coll) > 1
-        return G
+        return G_out
     end
     (k1, k, k2) = coll[1]
     #add extra statements to stmts so that cycles can be correctly detected
-    K = setdiff(collect(Graphs.vertices(trueG)), V)
+    #K = setdiff(collect(Graphs.vertices(trueG)), V)
     for i in setdiff(V, coll[1])
         for j in setdiff(V,[i]) 
-            #K_j = union(setdiff(sepset[min(i,k),max(i,k)], V) ,[j])
-            K_j = union(K,[j])
+            K_j = union(setdiff(sepset[min(i,k),max(i,k)], V) ,[j])
+            #K_j = union(K,[j])
             if Csep(trueG,C,K_j,i,k)
                 #push!(stmts, [i,k,K_j])
                 push!(stmts,[minimum([k,i]),maximum([k,i]),K_j])
@@ -51,12 +51,12 @@ function orient_induced_cycle_var2(G::CPDAG, V::Vector, stmts::Vector, sep_sets:
 
     if source == k1
         
-        return G
+        return G_out
     end 
 
 
-    D = [e for e in directed_edges(G)]
-    E = [e for e in undirected_edges(G)]
+    D = [e for e in directed_edges(G_out)]
+    E = [e for e in undirected_edges(G_out)]
     prev_node = source
     cur_node = neighbors(skel, prev_node)[1]
 
@@ -84,7 +84,6 @@ function orient_induced_cycle_var2(G::CPDAG, V::Vector, stmts::Vector, sep_sets:
 
     return cp_dag(unique(D), setdiff(E, union(D, reverse.(D))))
 end
-
 
 function orient_all_cycles_var2(G::CPDAG, stmts::Vector,sep_sets::Dict, trueG::SimpleDiGraph, C,degbound)
     for coll in colliders(G)
@@ -124,16 +123,16 @@ end
 
 
 function test_var2(trials, n, p) 
-    i = 0
-    while i < trials 
-
-    G = parental_ER_DAG(n, p)
+    i = 1
+    while i < trials
+    G = parental_ER_DAG(n,p)
     C = randomly_sampled_matrix(G)
     l = max_in_degree(G)
-
     G_out1 = PCstar(G,C,l)
     G_out2 = PCstarvar2(G,C,l;orient_cycles = true)[1]
     true_CPDAG = cp_dag(get_edges(wtr(G,C)[1]),[])
+    Set(directed_edges(G_out1)) == Set(directed_edges(G_out2)),  issubset(directed_edges(G_out1), directed_edges(true_CPDAG))
+    
     
     if !all([Set(directed_edges(G_out1)) == Set(directed_edges(G_out2)),  issubset(directed_edges(G_out1), directed_edges(true_CPDAG))])
         break 
@@ -145,6 +144,7 @@ function test_var2(trials, n, p)
     return i
 
 end   
+
 
 #TODO: write a function which puts this in a table. 
 #= 

@@ -698,7 +698,7 @@ function find_induced_cycles(G, coll)
     induced_cycles = Vector{}()
     for V in minimal_cycles 
         indV = induced_subgraph(G,V)
-        if length(directed_edges(indV)) + length(undirected_edges(indV)) == length(V) && all(x -> degree(skeleton(G),x) ==2, V)
+        if length(directed_edges(indV)) + length(undirected_edges(indV)) == length(V) && all(x -> degree(skeleton(indV),x) ==2, V)
             push!(induced_cycles, V)
         end 
     end 
