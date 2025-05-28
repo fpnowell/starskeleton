@@ -39,7 +39,7 @@ end
 
 
 #modified PCstar which queries the oracle as needed
-function PCstar(G::SimpleDiGraph,C,degbound)
+function PCstar(G::SimpleDiGraph,C,degbound,strategy;orient_cycles = false)
     (E, stmts, sep_sets) = PC_skeleton(G,C,degbound)
     G_out = cp_dag([],E)
     for triple in get_unshielded_triples(G_out)
@@ -49,41 +49,72 @@ function PCstar(G::SimpleDiGraph,C,degbound)
                 push!(stmts,[minimum([i,j]),maximum([i,j]),K])
             end 
     end 
-    stmts = unique(stmts)
     G_out = find_colliders(G_out,stmts)
-    G_out = orient_all_cycles(G_out, stmts, G,C,degbound)
-    return G_out
+    #sinks = [coll[2] for coll in colliders(G_out)] 
+    if orient_cycles && !isempty(colliders(G_out))
+        G_out = orient_all_cycles(G_out, G,C, sep_sets,degbound,strategy)
+    end 
+    return G_out, stmts, sep_sets, G, C, degbound 
 end 
 
 #PROBLEM: PCstar is not orienting cycles. I need to gather more statements for this! 
 
 #TODO: write modified cycle orientation function 
+function orient_induced_cycle(G_out::CPDAG, V::Vector, G::SimpleDiGraph, C, sep_sets, degbound, strategy)
 
-function orient_induced_cycle(G::CPDAG, V::Vector, stmts::Vector, trueG::SimpleDiGraph, C,degbound)
-
-    indV = induced_subgraph(G, V)
+    indV = induced_subgraph(G_out, V)
     skel = skeleton(indV)
     coll = colliders(indV)
-
-    
+    sepsets = sep_sets 
     if length(coll) > 1
-        return G
+        return G_out
     end
     (k1, k, k2) = coll[1]
-    #add extra statements to stmts
+    for v in setdiff(V, [k])
+        if !issubset(sepsets[v,k], V)
+            return G_out 
+            break 
+        end 
+    end 
+    stmts = [] 
+    #add extra statements to stmts so that cycles can be correctly detected
+    if strategy == 1 #naive approach: collect statements for all K outside the cycle (explodes in complexity)
+        for K in collect(powerset(setdiff(Graphs.vertices(G),V),0,degbound))
+            for i in setdiff(V, coll[1])
+                for j in setdiff(V,[i]) 
+                    K_j = union(K,[j])
+                    if Csep(G,C,K_j,i,k)
+                        push!(stmts,[minimum([k,i]),maximum([k,i]),K_j])
+                    end 
+                end
+            end 
+        end 
     
-    #K = setdiff(neighbors(G.skeleton, k), union(V,sinks))
-    for K in collect(powerset(setdiff(Graphs.vertices(trueG),V),0,degbound))
+    elseif strategy == 2 #fixed K for each pair i,k: all nodes in sepset(i,k) not in V. orients "most" cycles (TODO: characterize them!)
         for i in setdiff(V, coll[1])
-            for j in setdiff(V,[i]) 
+            K = setdiff(sepsets[i,k], V)
+            for j in setdiff(V,[i,k]) 
                 K_j = union(K,[j])
-                if Csep(trueG,C,K_j,i,k)
+                if Csep(G,C,K_j,i,k)
                     #push!(stmts, [i,k,K_j])
                     push!(stmts,[minimum([k,i]),maximum([k,i]),K_j])
                 end 
             end
-        end 
+        end
+    elseif strategy == 3 #fixed K: everything outside the cycle
+        K = setdiff(collect(Graphs.vertices(G)), V)
+        for i in setdiff(V, coll[1])
+            #K = setdiff(sepsets[i,k], V)
+            for j in setdiff(V,[i,k]) 
+                K_j = union(K,[j])
+                if Csep(G,C,K_j,i,k)
+                    #push!(stmts, [i,k,K_j])
+                    push!(stmts,[minimum([k,i]),maximum([k,i]),K_j])
+                end 
+            end
+        end
     end 
+
     stmts = unique(stmts)
     sep_dict = Dict()
 
@@ -94,7 +125,7 @@ function orient_induced_cycle(G::CPDAG, V::Vector, stmts::Vector, trueG::SimpleD
             sep_dict[i] = 0
             continue
         else 
-            sep_dict[i] = length(unique(filter(stmt -> i in stmt && k in stmt && length(intersect(V, stmt[3])) == 1 , stmts)))
+            sep_dict[i] = length(unique(filter(stmt -> i in stmt && k in stmt && length(intersect(V, stmt[3])) == 1 , stmts))) #this is only garantueed to detect the right source with strategy 2, because it assumes one statement per intermediate node.
         end 
     end 
     for i in V
@@ -104,20 +135,25 @@ function orient_induced_cycle(G::CPDAG, V::Vector, stmts::Vector, trueG::SimpleD
         end
     end
 
-    if all(x -> x == 0 , keys(sep_dict))
-        source = coll[1][1] 
+    if all(x -> sep_dict[x] == 0 , keys(sep_dict))
+        source = k1
     else 
-        source = findmax(sep_dict)[2]
+        (maxval, maxkey) = findmax(sep_dict)
+        if count(==(maxval), values(sep_dict)) == 1
+            source = maxkey 
+        else
+            source = k1
+        end
     end 
 
-    if source == k1
+    if source == k1 
         
-        return G
+        return G_out
     end 
 
 
-    D = [e for e in directed_edges(G)]
-    E = [e for e in undirected_edges(G)]
+    D = [e for e in directed_edges(G_out)]
+    E = [e for e in undirected_edges(G_out)]
     prev_node = source
     cur_node = neighbors(skel, prev_node)[1]
 
@@ -146,17 +182,22 @@ function orient_induced_cycle(G::CPDAG, V::Vector, stmts::Vector, trueG::SimpleD
     return cp_dag(unique(D), setdiff(E, union(D, reverse.(D))))
 end
 
-function orient_all_cycles(G::CPDAG, stmts, trueG::SimpleDiGraph, C,degbound)
-    for coll in colliders(G)
-        cycles = find_induced_cycles(G,coll)
+
+
+function orient_all_cycles(G_out::CPDAG, G::SimpleDiGraph, C, sep_sets, degbound,strategy)
+    for coll in colliders(G_out)
+        cycles = find_induced_cycles(G_out,coll)
         for cycle in cycles 
-            G = orient_induced_cycle(G, cycle, stmts,trueG,C,degbound)
+            G_out = orient_induced_cycle(G_out, cycle, G,C, sep_sets, degbound,strategy)
+            if undirected_edges(G_out) == []
+                break 
+            end 
+
         end 
     end
-    return G 
+    return G_out 
 
 end 
-
 
 
 
@@ -174,18 +215,3 @@ function test_PCstar(G,C,l)
 end 
 
 
-
-#= i = 0
-
-while i < 100 
-
-    G = parental_ER_DAG(6, 0.3)
-    C = randomly_sampled_matrix(G)
-    l = max_in_degree(G)
-    if !all(test_PCstar(G,C,l))
-        serialize(G, "counterex.jls")
-        break 
-    else 
-        i += 1 
-    end 
-end   =#
