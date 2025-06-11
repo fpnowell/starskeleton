@@ -44,11 +44,13 @@ function PCstar(G::SimpleDiGraph,C,degbound,strategy;orient_cycles = false)
     G_out = cp_dag([],E)
     for triple in get_unshielded_triples(G_out)
         (i,k,j) = triple 
-        K = setdiff(union(neighbors(G_out.skeleton,i),neighbors(G_out.skeleton, j)),[i,j])
+        for K in collect(powerset(setdiff(union(neighbors(G_out.skeleton,i),neighbors(G_out.skeleton, j)),[i,j]), 0, degbound))
             if Csep(G,C,K,i,j)
                 push!(stmts,[minimum([i,j]),maximum([i,j]),K])
-            end 
+            end
+        end  
     end 
+    stmts = unique(stmts)
     G_out = find_colliders(G_out,stmts)
     #sinks = [coll[2] for coll in colliders(G_out)] 
     if orient_cycles && !isempty(colliders(G_out))
@@ -76,10 +78,11 @@ function orient_induced_cycle(G_out::CPDAG, V::Vector, G::SimpleDiGraph, C, sep_
             break 
         end 
     end 
+    neV = setdiff(unique(Iterators.flatten([Graphs.neighbors(skeleton(G_out),v) for v in V])), V)
     stmts = [] 
     #add extra statements to stmts so that cycles can be correctly detected
     if strategy == 1 #naive approach: collect statements for all K outside the cycle (explodes in complexity)
-        for K in collect(powerset(setdiff(Graphs.vertices(G),V),0,degbound))
+        for K in collect(powerset(neV,0,degbound))
             for i in setdiff(V, coll[1])
                 for j in setdiff(V,[i]) 
                     K_j = union(K,[j])
@@ -101,10 +104,11 @@ function orient_induced_cycle(G_out::CPDAG, V::Vector, G::SimpleDiGraph, C, sep_
                 end 
             end
         end
-    elseif strategy == 3 #fixed K: everything outside the cycle
-        K = setdiff(collect(Graphs.vertices(G)), V)
+    elseif strategy == 3 #fixed K: neighbors of the cycle which are not collliders. FIXME: currently not orienting anything. 
+        colls = unique([x[2] for x in colliders(G_out)if !isempty(intersect(x, V))])
         for i in setdiff(V, coll[1])
-            #K = setdiff(sepsets[i,k], V)
+            K = union(setdiff(Graphs.neighbors(skeleton(G_out),i), union(V, colls)), setdiff(neighbors(skeleton(G_out),k)))
+            #K = setdiff(Graphs.neighbors(skeleton(G_out),i), union(V,colls))
             for j in setdiff(V,[i,k]) 
                 K_j = union(K,[j])
                 if Csep(G,C,K_j,i,k)
@@ -215,3 +219,17 @@ function test_PCstar(G,C,l)
 end 
 
 
+function count_separations(V, i, k, stmts)
+    fstmts = filter(stmt -> i in stmt && k in stmt, stmts)
+    count = 0 
+    for v in setdiff(V,i)
+        for stmt in fstmts 
+            if v in stmt[3]
+                count += 1 
+                break
+            end 
+        end 
+    end 
+    return count 
+            
+end 

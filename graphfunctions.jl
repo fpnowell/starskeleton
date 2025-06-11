@@ -593,7 +593,7 @@ end
 ##Cycle orientation functions 
 
 #this function orients the induced cycle G[V] given the full (bounded) set of Csepstatements
-function orient_induced_cycle(G::CPDAG, V::Vector, stmts::Vector)
+#= function orient_induced_cycle(G::CPDAG, V::Vector, stmts::Vector)
 
     indV = induced_subgraph(G, V)
     skel = skeleton(indV)
@@ -667,7 +667,7 @@ function orient_induced_cycle(G::CPDAG, V::Vector, stmts::Vector)
 
     return cp_dag(unique(D), setdiff(E, union(D, reverse.(D))))
 end
-
+ =#
 
 
 function find_cycles(G, coll)
@@ -706,7 +706,7 @@ function find_induced_cycles(G, coll)
 end
 
 
-function orient_all_cycles(G, stmts)
+#= function orient_all_cycles(G, stmts)
     for coll in colliders(G)
         cycles = find_induced_cycles(G,coll)
         for cycle in cycles 
@@ -716,3 +716,4 @@ function orient_all_cycles(G, stmts)
     return G 
 end 
 
+ =#

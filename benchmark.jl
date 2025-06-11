@@ -2,7 +2,7 @@
 using CSV
 using DataFrames
 
-include("StarPCvar2.jl")
+include("StarPC.jl")
 
 
 #PLAN for benchmarks: --- #nodes    #degree     #trials         #avg true edges         #avg edges w/o cycles       #avg. edges with cycles
@@ -20,22 +20,18 @@ include("StarPCvar2.jl")
 
 
 function key_values(G,C,l)
-    G_no_cycles, stmts, sep_sets, G, C, degbound  = PCstarvar2(G,C,l)
-    G_w_cycles= orient_all_cycles_var2(G_no_cycles, stmts, sep_sets, G,C,degbound)
+    G_no_cycles, stmts, sep_sets, G, C, degbound  = PCstar(G,C,l,1)
+    #G_out1 = orient_all_cycles(G_no_cycles, G,C,sep_sets, l, 1)
+    G_out2 = orient_all_cycles(G_no_cycles, G,C,sep_sets, l, 2)
+    G_out3 = orient_all_cycles(G_no_cycles, G,C,sep_sets, l, 3)
     true_CPDAG = cp_dag(get_edges(wtr(G,C)[1]),[])
-    return length(directed_edges(G_no_cycles)), length(directed_edges(G_w_cycles)), length(directed_edges(true_CPDAG))
+    return length(directed_edges(G_no_cycles)),  (length(directed_edges(G_out2)),issubset(directed_edges(G_out2), directed_edges(true_CPDAG))), (length(directed_edges(G_out3)),issubset(directed_edges(G_out3), directed_edges(true_CPDAG))), length(directed_edges(true_CPDAG)) 
 
 
 end 
-"""
-save_results_to_csv(f, inputs; filename="results.csv")
 
-Evaluates function `f` on each element of `inputs` and writes the results to a CSV file.
+#(length(directed_edges(G_out1)),issubset(directed_edges(G_out1), directed_edges(true_CPDAG))),
 
-- `f`: a function that returns either a single value or a tuple of values.
-- `inputs`: a collection of inputs (e.g., vectors, tuples) to be passed to `f`.
-- `filename`: the name of the output .csv file (default: "results.csv").
-"""
 function save_results_to_csv(f, inputs; filename="results.csv")
     results = []
 
@@ -51,7 +47,7 @@ end
 threeDAGs= []
 i = 0 
 while i < 100
-    G = parental_ER_DAG(7,0.4)
+    G = parental_ER_DAG(10,0.2)
     C = randomly_sampled_matrix(G)
     l = max_in_degree(G)
     if l == 3
@@ -61,11 +57,19 @@ while i < 100
 end 
 
 save_results_to_csv(key_values, threeDAGs)
+#= test = [] 
+for DAG in threeDAGs
+    G,C,l = DAG
+    G_out = PCstarvar2(G,C,l;orient_cycles = true)[1]
+    true_CPDAG = cp_dag(get_edges(wtr(G,C)[1]),[])
+    push!(test, issubset(directed_edges(G_out), directed_edges(true_CPDAG)))
 
+end 
+ =#
 fourDAGs= []
 i = 0 
-while i < 100
-    G = parental_ER_DAG(15, 0.2)
+while i < 1000
+    G = parental_ER_DAG(7, 0.4)
     C = randomly_sampled_matrix(G)
     l= max_in_degree(G)
     if l == 4
@@ -90,3 +94,14 @@ while i < 100
 end 
 
 save_results_to_csv(key_values, fiveDAGs)
+
+#= for (i, elem) in enumerate(fourDAGs)
+    G, C, l = elem 
+    try
+        G_no_cycles, stmts, sep_sets, G, C, degbound  = PCstar(G,C,l,1)
+        #G_out1 = orient_all_cycles(G_no_cycles, G,C,sep_sets, l, 1)
+        G_out2 = orient_all_cycles(G_no_cycles, G,C,sep_sets, l, 2)
+    catch
+        @warn "Error on element $i" 
+    end
+end =#
