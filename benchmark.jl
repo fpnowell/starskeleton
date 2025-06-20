@@ -23,10 +23,9 @@ function key_values(G,C,l)
     G_no_cycles, stmts, sep_sets, G, C, degbound  = PCstar(G,C,l,1)
     #G_out1 = orient_all_cycles(G_no_cycles, G,C,sep_sets, l, 1)
     G_out2 = orient_all_cycles(G_no_cycles, G,C,sep_sets, l, 2)
-    G_out3 = orient_all_cycles(G_no_cycles, G,C,sep_sets, l, 3)
+    #G_out3 = orient_all_cycles(G_no_cycles, G,C,sep_sets, l, 3)
     true_CPDAG = cp_dag(get_edges(wtr(G,C)[1]),[])
-    return length(directed_edges(G_no_cycles)),  (length(directed_edges(G_out2)),issubset(directed_edges(G_out2), directed_edges(true_CPDAG))), (length(directed_edges(G_out3)),issubset(directed_edges(G_out3), directed_edges(true_CPDAG))), length(directed_edges(true_CPDAG)) 
-
+    return length(directed_edges(G_no_cycles)),  (length(directed_edges(G_out2)),issubset(directed_edges(G_out2), directed_edges(true_CPDAG))), length(directed_edges(true_CPDAG)) 
 
 end 
 
@@ -47,10 +46,10 @@ end
 threeDAGs= []
 i = 0 
 while i < 100
-    G = parental_ER_DAG(10,0.2)
+    G = parental_ER_DAG(10,0.32)
     C = randomly_sampled_matrix(G)
     l = max_in_degree(G)
-    if l == 3
+    if l == 5
         push!(threeDAGs, [G,C,l])
         i+= 1
     end 
@@ -95,7 +94,7 @@ end
 
 save_results_to_csv(key_values, fiveDAGs)
 
-#= for (i, elem) in enumerate(fourDAGs)
+for (i, elem) in enumerate(fourDAGs)
     G, C, l = elem 
     try
         G_no_cycles, stmts, sep_sets, G, C, degbound  = PCstar(G,C,l,1)
@@ -103,5 +102,6 @@ save_results_to_csv(key_values, fiveDAGs)
         G_out2 = orient_all_cycles(G_no_cycles, G,C,sep_sets, l, 2)
     catch
         @warn "Error on element $i" 
+        break 
     end
-end =#
+end 

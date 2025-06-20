@@ -671,14 +671,18 @@ end
 
 
 function find_cycles(G, coll)
-    #TODO: this can be optimized
     (k1, k, k2) = coll 
     skel = skeleton(induced_subgraph(G, setdiff(vertices(G), [k])))
-    paths = collect(all_simple_paths(skel, k1, k2))
-    for path in paths 
-        push!(path,k)
+    if has_vertex(skel,k1) && has_vertex(skel, k2)
+        paths = collect(all_simple_paths(skel, k1, k2))
+        for path in paths 
+            push!(path,k)
         end 
-    return paths 
+        return paths 
+    else 
+        return []
+    end 
+
 end
 
 
@@ -706,14 +710,126 @@ function find_induced_cycles(G, coll)
 end
 
 
-#= function orient_all_cycles(G, stmts)
+function orient_all_cycles(G, stmts, sep_sets)
     for coll in colliders(G)
         cycles = find_induced_cycles(G,coll)
         for cycle in cycles 
-            G = orient_induced_cycle(G, cycle, stmts)
+            G = orient_induced_cycle(G, cycle, stmts, sep_sets)
         end 
     end
     return G 
 end 
 
- =#
+function orient_induced_cycle(G_out::CPDAG, V::Vector, stmts::Vector,sep_sets)
+
+    indV = induced_subgraph(G_out, V)
+    skel = skeleton(indV)
+    coll = colliders(indV)
+    
+    if length(coll) > 1
+        return G_out
+    end
+
+    (k1, k, k2) = coll[1]
+    for v in setdiff(V, [k])
+        if !issubset(sep_sets[v,k], V)
+            return G_out 
+            break 
+        end 
+    end 
+    for (a,b) in get_edges(skel)
+        for collider in colliders(G_out)
+            if length(intersect([a,b], collider)) == 2 && !(a == k  || b == k)
+                return G_out 
+                break 
+            end 
+        end 
+    end 
+
+    sep_dict = Dict()
+
+    for i in V
+
+        if i in coll[1]
+
+            sep_dict[i] = 1
+            continue
+        end
+
+        for stmt in filter(stmt -> i in stmt && k in stmt, stmts)
+
+            if length(intersect(V, stmt[3])) == 1
+                sep_dict[i] = 1
+                break
+            end
+        end
+    end
+
+    for i in V
+        
+        if !haskey(sep_dict, i)
+            sep_dict[i] = 0
+        end
+    end
+
+    source = k1
+
+    for i in setdiff(V, coll[1])
+
+        (j, l) = neighbors(skel, i)
+
+        if length(V) == 4 && sep_dict[i] == 1
+            source = i
+        elseif length(V) == 4 && sep_dict == 0
+            break 
+
+
+
+        elseif sep_dict[i] == 1 && sep_dict[j] != sep_dict[l]
+            source = i
+            break
+
+        elseif length(V) == 5 && sep_dict[i] == 1 
+            if length(filter(stmt -> i in stmt && k in stmt && length(intersect(V,stmt[3])) == 1 && length(stmt[3]) == minimum([length(t[3]) for t in stmts]), stmts)) == 2 
+                source = i 
+                break
+            end
+  
+        end
+    end
+
+    if source == k1
+        
+        return G_out
+    end 
+
+
+    D = [e for e in directed_edges(G_out)]
+    E = [e for e in undirected_edges(G_out)]
+    prev_node = source
+    cur_node = neighbors(skel, prev_node)[1]
+
+    while !(cur_node == k)
+
+        push!(D, (prev_node, cur_node))
+        new_node = setdiff(neighbors(skel, cur_node), [prev_node])[1]
+        prev_node = cur_node
+        cur_node = new_node
+        
+    end
+
+
+    prev_node = source
+    cur_node = neighbors(skel, prev_node)[2]
+
+    while !(cur_node == k)
+
+        push!(D, (prev_node, cur_node))
+        new_node = setdiff(neighbors(skel, cur_node), [prev_node])[1]
+        prev_node = cur_node
+        cur_node = new_node
+        
+    end
+
+    return cp_dag(unique(D), setdiff(E, union(D, reverse.(D))))
+end

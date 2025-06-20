@@ -1,12 +1,12 @@
 include("oracle.jl")
 
 #'original'PCstar, which constructs the CPDAG given a full list of statements
-function PCstar(n, degbound, stmts) 
-    E = skeleton_edges_from_statements(n, degbound,stmts)
-    G = cp_dag([],E)
-    G = find_colliders(G, stmts)
-    G = orient_all_cycles(G,stmts)
-    return G 
+function PCstar_statements(n, degbound, stmts) 
+    E , sep_sets = PC_skeleton_stmts(n, degbound, stmts)
+    G_out = cp_dag([],E)
+    G_out = find_colliders(G_out, stmts)
+    G_out = orient_all_cycles(G_out,stmts, sep_sets)
+    return G_out 
 
 end 
 
@@ -30,7 +30,7 @@ function PC_skeleton(G::SimpleDiGraph, C, degbound)
         end
         if !separated
             push!(E, (min(i,j),max(i,j)))
-            sep_sets[min(i,j),max(i,j)] = []
+            sep_sets[(min(i,j),max(i,j))] = []
         end
     end
 
@@ -120,7 +120,7 @@ function orient_induced_cycle(G_out::CPDAG, V::Vector, G::SimpleDiGraph, C, sep_
     end 
 
     stmts = unique(stmts)
-    sep_dict = Dict()
+#=     sep_dict = Dict()
 
     for i in V
 
@@ -129,7 +129,7 @@ function orient_induced_cycle(G_out::CPDAG, V::Vector, G::SimpleDiGraph, C, sep_
             sep_dict[i] = 0
             continue
         else 
-            sep_dict[i] = length(unique(filter(stmt -> i in stmt && k in stmt && length(intersect(V, stmt[3])) == 1 , stmts))) #this is only garantueed to detect the right source with strategy 2, because it assumes one statement per intermediate node.
+            sep_dict[i] = length(unique(filter(stmt -> i in stmt && k in stmt && length(intersect(V, stmt[3])) == 1 , stmts))) # currently, this is only garantueed to detect the right source with strategy 2, because it assumes one statement per intermediate node.
         end 
     end 
     for i in V
@@ -154,6 +154,63 @@ function orient_induced_cycle(G_out::CPDAG, V::Vector, G::SimpleDiGraph, C, sep_
         
         return G_out
     end 
+ =#
+#=     sep_dict = Dict()
+
+    for i in V
+
+        if i in coll[1]
+
+            sep_dict[i] = 1
+            continue
+        end
+
+        for stmt in filter(stmt -> i in stmt && k in stmt, stmts)
+
+            if length(intersect(V, stmt[3])) == 1
+                sep_dict[i] = 1
+                break
+            end
+        end
+    end
+
+    for i in V
+        
+        if !haskey(sep_dict, i)
+            sep_dict[i] = 0
+        end
+    end
+
+    source = k1
+
+    for i in setdiff(V, coll[1])
+
+        (j, l) = neighbors(skel, i)
+
+        if length(V) == 4 && sep_dict[i] == 1
+            source = i
+        
+
+
+
+        elseif sep_dict[i] == 1 && sep_dict[j] != sep_dict[l]
+            source = i
+            break
+
+        elseif length(V) == 5 && sep_dict[i] == 1 
+            if length(filter(stmt -> i in stmt && k in stmt && length(intersect(V,stmt[3])) == 1 && length(stmt[3]) == minimum([length(t[3]) for t in stmts]), stmts)) == 2 
+                source = i 
+                break
+            end
+
+        end
+    end =#
+
+    if source == k1
+        
+        return G_out
+    end 
+
 
 
     D = [e for e in directed_edges(G_out)]
