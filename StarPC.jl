@@ -1,16 +1,59 @@
 include("oracle.jl")
 
 #'original'PCstar, which constructs the CPDAG given a full list of statements
-function PCstar_statements(n, degbound, stmts) 
-    E , sep_sets = PC_skeleton_stmts(n, degbound, stmts)
+function PCstar_stmts(n, degbound, stmts) 
+    E ,stmts, sep_sets = PC_skeleton_stmts(n, degbound, stmts)
     G_out = cp_dag([],E)
     G_out = find_colliders(G_out, stmts)
-    G_out = orient_all_cycles(G_out,stmts, sep_sets)
+    G_out = orient_all_cycles_stmts(G_out,stmts, sep_sets)
     return G_out 
+end 
+
+function PC_skeleton_stmts(n, degbound, stmts) 
+    E = []
+    sep_sets = Dict{Tuple{Int, Int}, Vector{Int}}()
+
+    for j in 1:n, i in 1:(j-1)
+        #sep_sets[i,j] = []
+        separated = false 
+        for stmt in stmts 
+            if i == stmt[1] && j == stmt[2]
+                sep_sets[i,j] = stmt[3]
+                separated = true 
+                break 
+            end 
+
+        end 
+        if !separated
+            push!(E, (i,j))
+        end 
+    end 
+    return unique(E), stmts, sep_sets
+end 
+
+#Dictionary version of PCstar, which starts from dictionaries 
+#keys are pairs (i,j), values are separating sets
+function PC_skel_dict(n,sep_dict)
+    E = []
+    #sep_sets = Dict{Tuple{Int, Int}, Vector{Int}}()
+    for j in 1:n, i in 1:(j-1)
+        if !haskey(sep_dict, (i,j))
+            push!(E,(i,j))
+        end 
+    end 
+    return E, sep_dict
+end 
+
+function PCstar_dict(n, sep_dict)
+    E, sep_dict = PC_skel_dict(n, sep_dict)
+    G_out = cp_dag([],E)
+    G_out = find_colliders_dict(G_out, sep_dict)
+    G_out = orient_all_cycles_dict(G_out, sep_dict)
+    return G_out
 
 end 
 
-#PC skeleton: reconstructs edges of skeleton by querying statements on a "need-to-know" basis.
+#PC skeleton: reconstructs edges of skeleton by querying the oracle on a "need-to-know" basis.
 #outputs collected statements in stmts 
 function PC_skeleton(G::SimpleDiGraph, C, degbound)
     n = Graphs.nv(G)
@@ -38,7 +81,7 @@ function PC_skeleton(G::SimpleDiGraph, C, degbound)
 end
 
 
-#modified PCstar which queries the oracle as needed
+#modified PCstar which queries the oracle as needed to find colliders
 function PCstar(G::SimpleDiGraph,C,degbound,strategy;orient_cycles = false)
     (E, stmts, sep_sets) = PC_skeleton(G,C,degbound)
     G_out = cp_dag([],E)
@@ -61,7 +104,6 @@ end
 
 #PROBLEM: PCstar is not orienting cycles. I need to gather more statements for this! 
 
-#TODO: write modified cycle orientation function 
 function orient_induced_cycle(G_out::CPDAG, V::Vector, G::SimpleDiGraph, C, sep_sets, degbound, strategy)
 
     indV = induced_subgraph(G_out, V)
@@ -120,6 +162,7 @@ function orient_induced_cycle(G_out::CPDAG, V::Vector, G::SimpleDiGraph, C, sep_
     end 
 
     stmts = unique(stmts)
+#old cycle orientation
 #=     sep_dict = Dict()
 
     for i in V
@@ -155,7 +198,8 @@ function orient_induced_cycle(G_out::CPDAG, V::Vector, G::SimpleDiGraph, C, sep_
         return G_out
     end 
  =#
-#=     sep_dict = Dict()
+
+    sep_dict = Dict()
 
     for i in V
 
@@ -204,7 +248,7 @@ function orient_induced_cycle(G_out::CPDAG, V::Vector, G::SimpleDiGraph, C, sep_
             end
 
         end
-    end =#
+    end
 
     if source == k1
         
@@ -266,12 +310,22 @@ function test_PCstar(G,C,l)
     if !is_connected(G)
         return 3
     else 
-        G_out1 = PCstar(G,C,l)
+        #G_out1 = PCstar(G,C,l)
 
-        #G_out1 = PCstar(Graphs.nv(G), l, get_Csep_stmts_bounded(G,C,l))
+        G_out1 = PCstar_dict(Graphs.nv(G), Csep_dict(G,C,l))
         G_out2 = cp_dag(get_edges(wtr(G,C)[1]), [])
         #G_out2 = PCstarvar2(G,C,l)
         return G_out1.skeleton == G_out2.skeleton, G_out1.colliders == G_out2.colliders, issubset(directed_edges(G_out1), directed_edges(G_out2))
+    end 
+end 
+
+L = []
+for a in threeDAGs
+    G,C,l = a 
+    if all(test_PCstar(G,C,l))
+        push!(L,1)
+    else 
+        break 
     end 
 end 
 

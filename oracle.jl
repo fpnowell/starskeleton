@@ -129,3 +129,21 @@ end
 
 Csepstatements_wrt_nodes(G::SimpleDiGraph, i, j) = Csepstatements_wrt_nodes(G, constant_weights(G), i, j)
 
+function Csep_dict(G,C,degbound)
+    Csep_sets = Dict{Tuple{Int, Int}, Vector{Vector{Any}}}()
+    #(G,C) = wtr(G,C)
+    for K in collect(powerset(Graphs.vertices(G),0,degbound))
+        V_without_K = setdiff(collect(Graphs.vertices(G)), K)
+        for (i,j) in [(i, j) for (i, j) in Iterators.product(V_without_K, V_without_K) if i < j]
+                if Csep(G,C,K,i,j)
+                    push!(get!(Csep_sets, (i, j), Vector{Vector{Int}}()), K)
+                end 
+        end 
+    end 
+#=     for (i,j) in [(i, j) for (i, j) in Iterators.product(V_without_K, V_without_K) if i < j]
+        if !haskey(Csep_sets, (i,j))
+            get!(Csep_sets, (i,j), []) 
+        end 
+    end  =#
+    return Csep_sets
+end 
