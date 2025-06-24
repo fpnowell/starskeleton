@@ -129,6 +129,7 @@ function generate_random_dag(n::Int, p::Float64)
             end
         end
     end
+    #TODO: I want to try permuting the nodes so as to get DAGs which are not topologically ordered, just to see if my alg runs
     return G
 end
 
