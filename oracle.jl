@@ -133,7 +133,7 @@ Csepstatements_wrt_nodes(G::SimpleDiGraph, i, j) = Csepstatements_wrt_nodes(G, c
 #given a true DAG with bounded in-degree, construct a dictionary 
 # keys are non-adjacent pairs [i,j]
 #values are lists of all separating sets of length <= degbound
-
+#Question: an alternative
 function Csep_dict(G,C,degbound)
     Csep_sets = Dict{Tuple{Int, Int}, Vector{Vector{Any}}}()
     #(G,C) = wtr(G,C)
