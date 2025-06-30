@@ -6,7 +6,7 @@ include("PCstar_dict.jl")
 #TODO: change these methods to use dictionaries too
 function PC_skeleton_query(G::SimpleDiGraph, C, degbound)
     #construct a Csep-dictionary, but only go as far as necessary to separate non-adjacent i-j
-    Csep_sets = Dict{Tuple{Int, Int}, Vector{Vector{Any}}}()
+    Csep_sets = Dict{Tuple{Int, Int}, Vector{Set{Any}}}()
 
 #=     for i in 1:n, j in 1:(i-1)
         separated = false
@@ -38,7 +38,7 @@ function PC_skeleton_query(G::SimpleDiGraph, C, degbound)
         for K in collect(powerset(setdiff(1:n, [i, j]), 0, degbound))
             if Csep(G, C, K, i, j)
                 #push!(stmts, [minimum([i,j]), maximum([i,j]), K])
-                push!(get!(Csep_sets, (i, j), Vector{Vector{Int}}()), K)
+                push!(get!(Csep_sets, (i, j), Vector{Set{Int}}()), Set(K))
                 break
             end
         end
@@ -66,24 +66,25 @@ function PCstar_query(G::SimpleDiGraph,C,degbound,strategy;orient_cycles = false
         for K in collect(powerset(setdiff(union(neighbors(G_out.skeleton,i),neighbors(G_out.skeleton, j)),[i,j]), 0, degbound))
             if Csep(G,C,K,i,j) && !(K in Csep_sets[min(i,j),max(i,j)]) #you might have to sort K 
                 #push!(stmts,[minimum([i,j]),maximum([i,j]),K])
-                push!(get!(Csep_sets, (i, j), Vector{Vector{Int}}()), K)
+                push!(get!(Csep_sets, (min(i, j), max(i,j)), Vector{Set{Int}}()), Set(K))
             end
         end  
     end 
-    G_out = find_colliders_dict(G_out, Csep_sets )
+    G_out = find_colliders_dict(G_out, Csep_sets)
     #sinks = [coll[2] for coll in colliders(G_out)] 
+    n_edges_wo_cycles = length(directed_edges(G_out))
     if orient_cycles && !isempty(colliders(G_out))
-        #TODO: write new orient_cycles_query
         G_out = orient_all_cycles_query(G_out, G,C, Csep_sets,degbound,strategy)
     end 
-    return G_out, Csep_sets, G, C, degbound 
+    n_edges_w_cycles = length(directed_edges(G_out))
+    return G_out, n_edges_wo_cycles, n_edges_w_cycles
 end 
 
 
 
 function orient_induced_cycle_query(G_out::CPDAG, V::Vector, G::SimpleDiGraph, C, Csep_sets, degbound, strategy)
     
-    sinks = [collider[2] for collider in colliders(G_out)]
+    sinks = unique([collider[2] for collider in colliders(G_out)])
 
     indV = induced_subgraph(G_out, V)
     skel = skeleton(indV)
@@ -93,16 +94,26 @@ function orient_induced_cycle_query(G_out::CPDAG, V::Vector, G::SimpleDiGraph, C
         return G_out
     end
     (k1, k, k2) = coll[1]
-    for v in setdiff(V, [k])
-        for pi in all_simple_paths(G_out.skeleton, v,k)
-            if !issubset(pi,V) && isempty(intersect(pi, sinks)) #checks if there is a trek/directed path from v to k
-                return G_out 
-                break 
-            end 
-        end 
+    #TODO: change this to use Graphs.has_path (using excluded vertices)
 
-            
-    end 
+    for v in setdiff(V, [k])
+        for pi in collect(all_simple_paths(G_out.skeleton, v, k))
+            #println("Checking path: ", pi)
+            if !issubset(pi, V) && isempty(intersect(setdiff(pi,[v,k]), sinks))
+                #println("Condition fulfilled!")
+                return G_out
+            end
+        end 
+    end  
+
+    #If there is a directed path or a trek containing nodes outside of V, the cycle cannot be oriented
+#=     for v in setdiff(V, [k])
+        if has_path(G_out.skeleton, v,k;exclude_vertices = union(sinks, setdiff(V, [v,k])))
+                #println("Condition fulfilled!")
+        return G_out
+        end
+
+    end  =#
     neV = setdiff(unique(Iterators.flatten([Graphs.neighbors(skeleton(G_out),v) for v in V])), V)
 
     #add extra statements to stmts so that cycles can be correctly detected
@@ -113,7 +124,7 @@ function orient_induced_cycle_query(G_out::CPDAG, V::Vector, G::SimpleDiGraph, C
                     K_j = union(K,[j])
                     if Csep(G,C,K_j,i,k)
                         #push!(stmts,[minimum([k,i]),maximum([k,i]),K_j])
-                        push!(get!(Csep_sets, (i, j), Vector{Vector{Int}}()), K_j)
+                        push!(get!(Csep_sets, (i, k), Vector{Vector{Int}}()), Set(K_j))
                     end 
                 end
             end 
@@ -121,13 +132,16 @@ function orient_induced_cycle_query(G_out::CPDAG, V::Vector, G::SimpleDiGraph, C
     
     elseif strategy == 2 #fixed K for each pair i,k: all nodes in sepset(i,k) not in V. orients "most" cycles (TODO: characterize them!)
         for i in setdiff(V, coll[1])
-            K = setdiff(Csep_sets[i,k], V)
+            #K = setdiff(Csep_sets[i,k], V)
+            #K =  []
             for j in setdiff(V,[i,k]) 
-                K_j = union(K,[j])
+                K_j = [j]
                 if Csep(G,C,K_j,i,k)
                     #push!(stmts, [i,k,K_j])
                     #push!(stmts,[minimum([k,i]),maximum([k,i]),K_j])
-                    push!(get!(Csep_sets, (i, j), Vector{Vector{Int}}()), K_j)
+                    if !(Set(K_j) in Csep_sets[i,k])
+                        push!(get!(Csep_sets, (i, k), Vector{Set{Any}}()), Set(K_j))
+                    end     
                 end 
             end
         end
@@ -157,7 +171,7 @@ function orient_induced_cycle_query(G_out::CPDAG, V::Vector, G::SimpleDiGraph, C
             continue
         end
 
-        for K in Csep_sets[i,k]
+        for K in unique(Csep_sets[i,k])
 
             if length(intersect(V, K)) == 1
                 source_dict[i] = 1
@@ -193,7 +207,7 @@ function orient_induced_cycle_query(G_out::CPDAG, V::Vector, G::SimpleDiGraph, C
         elseif length(V) == 5 && source_dict[i] == 1 
             #if length(filter(stmt -> i in stmt && k in stmt && length(intersect(V,stmt[3])) == 1 && length(stmt[3]) == minimum([length(t[3]) for t in stmts]), stmts)) == 2 
             #the statement above checks for separating sets 
-            if length(filter(K -> length(intersect(V,K)) == 1 && length(K) == minimum(length.(Csep_sets[i,k])) , Csep_sets[i,k])) == 2   
+            if length(intersect(unique(Iterators.flatten((filter(K -> length(intersect(V,K)) == 1 && length(K) == minimum(length.(Csep_sets[i,k])) , unique(Csep_sets[i,k]))))),V)) == 2  
                 source = i 
                 break
             end
@@ -205,7 +219,11 @@ function orient_induced_cycle_query(G_out::CPDAG, V::Vector, G::SimpleDiGraph, C
         
         return G_out
     end 
-
+    if source != minimum(V)
+        println(V , "is being incorrectly oriented!")
+    else
+        println("orienting cycle " , V , "of length ", length(V))
+    end 
 
     D = [e for e in directed_edges(G_out)]
     E = [e for e in undirected_edges(G_out)]
@@ -234,7 +252,7 @@ function orient_induced_cycle_query(G_out::CPDAG, V::Vector, G::SimpleDiGraph, C
         
     end
 
-    return cp_dag(unique(D), setdiff(E, union(D, reverse.(D))))
+    return cp_dag(unique(D), setdiff(E, union(D, reverse.(D)))) 
 end
 
 
@@ -250,11 +268,23 @@ function orient_all_cycles_query(G_out::CPDAG, G::SimpleDiGraph, C, Csep_sets, d
 
         end 
     end
-    return G_out 
+    return G_out
 
 end 
+#= 
+cycles = [] 
+for collider in colliders(G_out)
+    for cycle in find_induced_cycles(G_out, collider)
+            push!(cycles,cycle)
+    end 
+end 
 
+[orient_induced_cycle_query(G_no_cycles, V, G, C, Csep_sets, 5, 2) for V in cycles]
 
+G_out1 = G_no_cycles
+for V in cycles 
+    G_out1 = orient_induced_cycle_query(G_no_cycles, V, G, C, Csep_sets, 5, 2)
+end   =#
 #old cycle orientation
 #=     sep_dict = Dict()
 
@@ -292,4 +322,4 @@ end
     end 
  =#
 
- 
+ []

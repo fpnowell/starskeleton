@@ -2,7 +2,7 @@
 using CSV
 using DataFrames
 
-include("StarPC.jl")
+include("StarPC.jl")    
 
 
 #PLAN for benchmarks: --- #nodes    #degree     #trials         #avg true edges         #avg edges w/o cycles       #avg. edges with cycles
@@ -20,12 +20,10 @@ include("StarPC.jl")
 
 
 function key_values(G,C,l)
-    G_no_cycles, Csep_sets, G, C, degbound  = PCstar_query(G,C,l,2)
-    #G_out1 = orient_all_cycles(G_no_cycles, G,C,sep_sets, l, 1)
-    G_out2 = orient_all_cycles_query(G_no_cycles, G,C, Csep_sets, l, 2)
+    G_out , n1, n2 = PCstar_query(G,C,l,2;orient_cycles = true )
     #G_out3 = orient_all_cycles(G_no_cycles, G,C,sep_sets, l, 3)
     true_CPDAG = cp_dag(get_edges(wtr(G,C)[1]),[])
-    return length(directed_edges(G_no_cycles)),  (length(directed_edges(G_out2)),issubset(directed_edges(G_out2), directed_edges(true_CPDAG))), length(directed_edges(true_CPDAG)) 
+    return n1, n2, length(directed_edges(true_CPDAG)), length(edges(G)), (issubset(directed_edges(G_out), directed_edges(true_CPDAG)) && G_out.skeleton == true_CPDAG.skeleton && G_out.colliders == true_CPDAG.colliders )
 
 end 
 
@@ -34,8 +32,14 @@ end
 function save_results_to_csv(f, inputs; filename="results.csv")
     results = []
 
-    for x in inputs
-        output = f(x...)
+    for i in 1:length(inputs)
+        println("computing DAG " ,  i  ,  " out of " , length(inputs) , " ... ")
+        output = f(inputs[i]...)
+        if output[5] == false
+            throw(ErrorException("Something's wrong at index $i !!! Returning inputs."))
+            return inputs  # Alternatively, just throw without returning if preferred
+        end
+
         push!(results, output isa Tuple ? output : (output,))
     end
 
@@ -43,10 +47,30 @@ function save_results_to_csv(f, inputs; filename="results.csv")
     CSV.write(filename, df)
 end
 
+function run_benchmark(trials, n,  p, l )
+    DAGs = []
+    #first generate the DAGs
+    i = 0 
+    while i < trials 
+        G = parental_ER_DAG(n,p)
+        C = randomly_sampled_matrix(G)
+        if max_in_degree(G) == l 
+            push!(DAGs, [G,C,l])
+            i +=1
+        end 
+    end 
+    println("Running benchmarks...")
+    save_results_to_csv(key_values, DAGs; filename = "$n indeg $l.csv " )
+end 
+
+
+
+
+
 threeDAGs= []
 i = 0 
-while i < 100
-    G = parental_ER_DAG(7,0.3)
+while i < 10
+    G = parental_ER_DAG(10,0.2)
     C = randomly_sampled_matrix(G)
     l = max_in_degree(G)
     if l == 3
@@ -55,7 +79,7 @@ while i < 100
     end 
 end 
 
-save_results_to_csv(key_values, threeDAGs)
+save_results_to_csv(key_values, threeDAGs;filename = "10_3_test.csv")
 
 #= test = [] 
 for DAG in threeDAGs
@@ -69,7 +93,7 @@ end
 fourDAGs= []
 i = 0 
 while i < 100
-    G = parental_ER_DAG(7, 0.4)
+    G = parental_ER_DAG(10, 0.3)
     C = randomly_sampled_matrix(G)
     l= max_in_degree(G)
     if l == 4
@@ -84,7 +108,7 @@ save_results_to_csv(key_values, fourDAGs)
 fiveDAGs= []
 i = 0 
 while i < 100
-    G = parental_ER_DAG(7, 0.35)
+    G = parental_ER_DAG(10, 0.33)
     C = randomly_sampled_matrix(G)
     l = max_in_degree(G)
     if l == 5
@@ -106,3 +130,54 @@ for (i, elem) in enumerate(fourDAGs)
         break 
     end
 end 
+
+three15DAGs = [] 
+i = 0 
+while i < 10
+
+    G = parental_ER_DAG(15, 0.1)
+    C = randomly_sampled_matrix(G)
+    l = max_in_degree(G)
+    if l == 3 
+        push!(three15DAGs, [G,C,l])
+        i+= 1 
+    end 
+end 
+
+save_results_to_csv(key_values, three15DAGs)
+
+four15DAGs = [] 
+i = 0 
+while i < 10
+
+    G = parental_ER_DAG(15, 0.15)
+    C = randomly_sampled_matrix(G)
+    l = max_in_degree(G)
+    if l == 4
+        push!(four15DAGs, [G,C,l])
+        i+= 1 
+    end 
+end 
+
+save_results_to_csv(key_values, four15DAGs)
+
+five15DAGs = [] 
+i = 0 
+while i < 10
+
+    G = parental_ER_DAG(15, 0.2)
+    C = randomly_sampled_matrix(G)
+    l = max_in_degree(G)
+    if l == 5
+        push!(five15DAGs, [G,C,l])
+        i+= 1 
+    end 
+end 
+
+
+save_results_to_csv(key_values, five15DAGs)
+
+
+G = parental_ER_DAG(20, 0.15)
+C = randomly_sampled_matrix(G)
+l = max_in_degree(G)
