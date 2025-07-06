@@ -1009,3 +1009,22 @@ function orient_all_cycles_dict(G_out, sep_dict)
     end
     return G_out 
 end 
+
+#checks if a vector v contains a given (ordered) sequence seq 
+function contains_subsequence(v, seq) 
+    if length(v) <3
+        return false
+    end
+    i = 2
+    bool = false 
+    while i < length(v)
+        triple = (v[i-1], v[i], v[i+1])
+        if triple == seq || triple == reverse(seq)
+            return true 
+        else 
+            i += 1
+        end  
+    end 
+    return bool
+
+end

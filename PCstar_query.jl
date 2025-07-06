@@ -34,11 +34,14 @@ function PC_skeleton_query(G::SimpleDiGraph, C, degbound)
         end 
     end  =#
     n = Graphs.nv(G)
+    n_wtr_edges = Graphs.ne(wtr(G,C)[1])
+    k = 1 
     for j in 1:n, i in 1:(j-1)
         for K in collect(powerset(setdiff(1:n, [i, j]), 0, degbound))
             if Csep(G, C, K, i, j)
                 #push!(stmts, [minimum([i,j]), maximum([i,j]), K])
                 push!(get!(Csep_sets, (i, j), Vector{Set{Int}}()), Set(K))
+                println("recovered edge no. " , k , " / " , n_wtr_edges)
                 break
             end
         end
@@ -52,6 +55,7 @@ function PC_skeleton_query(G::SimpleDiGraph, C, degbound)
             push!(E,(i,j))
         end 
     end 
+    println("Skeleton recovered!")
     return E, Csep_sets 
 end
 
@@ -61,6 +65,7 @@ function PCstar_query(G::SimpleDiGraph,C,degbound,strategy;orient_cycles = false
     (E, Csep_sets) = PC_skeleton_query(G,C,degbound)
     G_out = cp_dag([],E)
     #add additional separating sets for detecting colliders
+    println("Gathering extra statements for collider orientation...")
     for triple in get_unshielded_triples(G_out)
         (i,k,j) = triple 
         for K in collect(powerset(setdiff(union(neighbors(G_out.skeleton,i),neighbors(G_out.skeleton, j)),[i,j]), 0, degbound))
@@ -84,7 +89,7 @@ end
 
 function orient_induced_cycle_query(G_out::CPDAG, V::Vector, G::SimpleDiGraph, C, Csep_sets, degbound, strategy)
     
-    sinks = unique([collider[2] for collider in colliders(G_out)])
+    #sinks = unique([collider[2] for collider in colliders(G_out)])
 
     indV = induced_subgraph(G_out, V)
     skel = skeleton(indV)
@@ -99,7 +104,8 @@ function orient_induced_cycle_query(G_out::CPDAG, V::Vector, G::SimpleDiGraph, C
     for v in setdiff(V, [k])
         for pi in collect(all_simple_paths(G_out.skeleton, v, k))
             #println("Checking path: ", pi)
-            if !issubset(pi, V) && isempty(intersect(setdiff(pi,[v,k]), sinks))
+            #FIXME: it's not enough to look at sinks! 
+            if !issubset(pi, V) && !any(i -> contains_subsequence(pi,i), colliders(G_out))
                 #println("Condition fulfilled!")
                 return G_out
             end

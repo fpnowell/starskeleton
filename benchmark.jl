@@ -1,4 +1,3 @@
-
 using CSV
 using DataFrames
 
@@ -178,6 +177,24 @@ end
 save_results_to_csv(key_values, five15DAGs)
 
 
-G = parental_ER_DAG(20, 0.15)
+four20DAGs = []
+i = 0 
+while i < 10
+
+    G = parental_ER_DAG(20, 0.15)
+    C = randomly_sampled_matrix(G)
+    l = max_in_degree(G)
+    if l == 4
+        push!(four20DAGs, [G,C,l])
+        i+= 1 
+    end 
+
+end 
+
+save_results_to_csv(key_values, four20DAGs)
+
+
+
+G = parental_ER_DAG(20, 0.2)
 C = randomly_sampled_matrix(G)
 l = max_in_degree(G)
