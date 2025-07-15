@@ -22,7 +22,7 @@ function key_values(G,C,l)
     G_out , n1, n2 = PCstar_query(G,C,l,2;orient_cycles = true )
     #G_out3 = orient_all_cycles(G_no_cycles, G,C,sep_sets, l, 3)
     true_CPDAG = cp_dag(get_edges(wtr(G,C)[1]),[])
-    return n1, n2, length(directed_edges(true_CPDAG)), length(edges(G)), (issubset(directed_edges(G_out), directed_edges(true_CPDAG)) && G_out.skeleton == true_CPDAG.skeleton && G_out.colliders == true_CPDAG.colliders )
+    return length(edges(G)), length(directed_edges(true_CPDAG)), n1, n2, (issubset(directed_edges(G_out), directed_edges(true_CPDAG)) && G_out.skeleton == true_CPDAG.skeleton && G_out.colliders == true_CPDAG.colliders )
 
 end 
 
@@ -63,8 +63,19 @@ function run_benchmark(trials, n,  p, l )
 end 
 
 
+#10 node DAGs 
+#run_benchmark(100, 10, 0.2, 3)
+#run_benchmark(100, 10, 0.25, 4)
+#run_benchmark(100, 10, 0.3, 5)
+#run_benchmark(100, 15, 0.1, 3)
 
 
+
+
+
+
+
+run_benchmark()
 
 threeDAGs= []
 i = 0 

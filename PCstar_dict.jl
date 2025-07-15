@@ -4,14 +4,14 @@ include("oracle.jl")
 #Dictionary version of PCstar, which starts from dictionaries 
 #keys are pairs (i,j), values are separating sets
 function PC_skel_dict(n,sep_dict)
-    E = []
-    #sep_sets = Dict{Tuple{Int, Int}, Vector{Int}}()
-    for j in 1:n, i in 1:(j-1)
-        if !haskey(sep_dict, (i,j))
-            push!(E,(i,j))
+        E = []
+        #sep_sets = Dict{Tuple{Int, Int}, Vector{Int}}()
+        for j in 1:n, i in 1:(j-1)
+            if !haskey(sep_dict, (i,j))
+                push!(E,(i,j))
+            end 
         end 
-    end 
-    return E, sep_dict
+        return E, sep_dict
 end 
 
 function PCstar_dict(n, sep_dict)

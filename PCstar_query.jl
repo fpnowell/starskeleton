@@ -35,13 +35,12 @@ function PC_skeleton_query(G::SimpleDiGraph, C, degbound)
     end  =#
     n = Graphs.nv(G)
     n_wtr_edges = Graphs.ne(wtr(G,C)[1])
-    k = 1 
+    println("Computing Csep dictionary...")
     for j in 1:n, i in 1:(j-1)
         for K in collect(powerset(setdiff(1:n, [i, j]), 0, degbound))
             if Csep(G, C, K, i, j)
                 #push!(stmts, [minimum([i,j]), maximum([i,j]), K])
                 push!(get!(Csep_sets, (i, j), Vector{Set{Int}}()), Set(K))
-                println("recovered edge no. " , k , " / " , n_wtr_edges)
                 break
             end
         end
@@ -49,10 +48,13 @@ function PC_skeleton_query(G::SimpleDiGraph, C, degbound)
 
 
     E = []
+    #k = 1 
     #sep_sets = Dict{Tuple{Int, Int}, Vector{Int}}()
     for j in 1:Graphs.nv(G), i in 1:(j-1)
         if !haskey(Csep_sets, (i,j))
             push!(E,(i,j))
+            #k += 1 
+            #println("recovered edge no. " , k , " / " , n_wtr_edges)
         end 
     end 
     println("Skeleton recovered!")
