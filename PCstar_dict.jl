@@ -1,7 +1,7 @@
 include("oracle.jl")
 
 
-#Dictionary version of PCstar, which starts from dictionaries 
+#Dictionary version of PCstar, which starts from a dictionary
 #keys are pairs (i,j), values are separating sets
 function PC_skel_dict(n,sep_dict)
         E = []

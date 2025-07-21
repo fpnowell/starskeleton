@@ -14,15 +14,3 @@ function test_PCstar(G,C,l)
         return G_out1.skeleton == G_out2.skeleton, G_out1.colliders == G_out2.colliders, issubset(directed_edges(G_out1), directed_edges(G_out2))
     end 
 end 
-#= 
-L = []
-for a in threeDAGs
-    G,C,l = a 
-    if all(test_PCstar(G,C,l))
-        push!(L,1)
-    else 
-        break 
-    end 
-end 
-
- =#

@@ -1,7 +1,7 @@
 include("oracle.jl")
 
 
-#'original'PCstar, which constructs the CPDAG given a full list of statements (get_Csepstatements(G,C))
+#'original'PCstar, which constructs the CPDAG given a full list of statements get_Csepstatements(G,C)
 function PCstar_stmts(n, degbound, stmts) 
     E ,stmts, sep_sets = PC_skeleton_stmts(n, degbound, stmts)
     G_out = cp_dag([],E)
