@@ -1,5 +1,6 @@
 include("oracle.jl")
 include("PCstar_dict.jl")
+include("meek.jl")
 
 #PC skeleton: reconstructs edges of skeleton by querying the oracle on a "need-to-know" basis.
 #outputs collected statements in stmts 
@@ -34,7 +35,7 @@ end
 
 #modified PCstar which queries the oracle as needed to find colliders
 #input is the true DAG with in-degree bounded by degbound
-function PCstar_query(G::SimpleDiGraph,C,degbound;orient_cycles = false)
+function PCstar_query(G::SimpleDiGraph,C,degbound;orient_cycles = false, apply_rules = false )
     (E, Csep_sets) = PC_skeleton_query(G,C,degbound)
     G_out = cp_dag([],E)
     #add additional separating sets for detecting colliders
@@ -48,10 +49,17 @@ function PCstar_query(G::SimpleDiGraph,C,degbound;orient_cycles = false)
         end  
     end 
     G_out = find_colliders_dict(G_out, Csep_sets)
-    n_edges_wo_cycles = length(directed_edges(G_out))
+    if apply_rules 
+        n_edges_wo_cycles = length(directed_edges(apply_meek(G_out)))
+    else 
+        n_edges_wo_cycles = length(directed_edges(G_out))
+    end 
     if orient_cycles && !isempty(colliders(G_out))
         G_out = orient_all_cycles_query(G_out, G,C, Csep_sets,degbound)
     end 
+    if apply_rules
+        G_out = apply_meek(G_out)
+    end
     n_edges_w_cycles = length(directed_edges(G_out))
     return G_out, n_edges_wo_cycles, n_edges_w_cycles
 end 

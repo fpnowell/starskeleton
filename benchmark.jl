@@ -8,7 +8,7 @@ include("StarPC.jl")
 #INPUT: a weighted DAG with in-degree l
 #OUTPUT: The tuple #edges(G) , #edges(G^tr), #edges directed by PCstar w/o cycles, #edges with cycle orientation, boolean checking correctness
 function table_entries(G,C,l)
-    G_out , n1, n2 = PCstar_query(G,C,l;orient_cycles = true )
+    G_out , n1, n2 = PCstar_query(G,C,l;orient_cycles = true, apply_rules = true  )
     #G_out3 = orient_all_cycles(G_no_cycles, G,C,sep_sets, l, 3)
     true_CPDAG = cp_dag(get_edges(wtr(G,C)[1]),[])
     return length(edges(G)), length(directed_edges(true_CPDAG)), n1, n2, (issubset(directed_edges(G_out), directed_edges(true_CPDAG)) && G_out.skeleton == true_CPDAG.skeleton && G_out.colliders == true_CPDAG.colliders )
@@ -58,7 +58,6 @@ end
 #run_benchmark(100, 10, 0.2, 3)
 #run_benchmark(100, 10, 0.25, 4)
 #run_benchmark(100, 10, 0.3, 5)
-#run_benchmark(100, 15, 0.1, 3)
 
 #15 node DAGs 
 
