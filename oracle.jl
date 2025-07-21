@@ -79,7 +79,7 @@ function get_Csepstatements(G::SimpleDiGraph, C)
     for i in collect(Graphs.vertices(G)), j in 1:i-1
         for K in collect(powerset(setdiff(Graphs.vertices(G), [i,j])))
             if Csep(G,C,K,i,j)
-                push!(L,[i,j,K])
+                push!(L,[minimum([i,j]),maximum([i,j]),K])
             end 
         end 
     end 
@@ -108,7 +108,7 @@ function get_Csep_stmts_bounded(G::SimpleDiGraph,C, k)
     for K in collect(powerset(Graphs.vertices(G),0,k))
         for i in setdiff(collect(Graphs.vertices(G)), K), j in 1:i-1
             if Csep(G,C,K,i,j)
-                push!(L,[j,i,K])
+                push!(L,[minimum([i,j]),maximum([i,j]),K])
             end 
         end 
     end 
@@ -129,3 +129,21 @@ end
 
 Csepstatements_wrt_nodes(G::SimpleDiGraph, i, j) = Csepstatements_wrt_nodes(G, constant_weights(G), i, j)
 
+#Csep dictionary
+#given a true DAG with bounded in-degree, construct a dictionary 
+# keys are non-adjacent pairs [i,j]
+#values are lists of all separating sets of length <= degbound
+#Question: an alternative
+function Csep_dict(G,C,degbound)
+    Csep_sets = Dict{Tuple{Int, Int}, Vector{Vector{Any}}}()
+    #(G,C) = wtr(G,C)
+    for K in collect(powerset(Graphs.vertices(G),0,degbound))
+        V_without_K = setdiff(collect(Graphs.vertices(G)), K)
+        for (i,j) in [(i, j) for (i, j) in Iterators.product(V_without_K, V_without_K) if i < j]
+                if Csep(G,C,K,i,j)
+                    push!(get!(Csep_sets, (i, j), Vector{Vector{Int}}()), K)
+                end 
+        end 
+    end 
+    return Csep_sets
+end 
