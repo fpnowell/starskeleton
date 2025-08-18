@@ -1,4 +1,4 @@
-include("main.jl")
+#include("PCstar.jl)
 
 #Example 1: Diamond with 1-4 edge and constant weights 
 
@@ -33,7 +33,6 @@ C3[2,4] = 5
 
 G3skelvar = Csep_skeleton(G3, C3) #(2,4) no longer cut 
 
-#TODO: Write a function which checks wheteher the output of PC contains all of the critical paths in the original DAG 
 
 G4 = DAG_from_edges([(1,2),(2,4),(3,1),(3,4)])
 

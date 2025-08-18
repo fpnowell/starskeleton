@@ -379,7 +379,7 @@ function is_type_e(G::SimpleDiGraph, P::Vector, K::Vector)
 end 
 
 
-##CPDAG functions 
+##CPDAG type and methods
 
 struct CPDAG
 
@@ -459,7 +459,9 @@ function cp_dag(D::Vector, E::Vector)
     return CPDAG(V, [], skel, D, E, coll)
 end
 
-##Collider detection 
+
+
+###Collider detection 
 
 # outputs all triples (i, k, j) such that the induced subgraph G[i,j,k] = i - k - j
 function get_unshielded_triples(G::SimpleGraph)
@@ -666,6 +668,7 @@ function find_induced_cycles(G, coll)
     return induced_cycles
 end
 
+##Csep statement cycle orientation methods
 
 function orient_all_cycles_stmts(G, stmts, sep_sets)
     for coll in colliders(G)
@@ -676,6 +679,7 @@ function orient_all_cycles_stmts(G, stmts, sep_sets)
     end
     return G 
 end 
+
 
 #orient an induced cycle of a cp_dag from a full set of Csep statements. 
 function orient_induced_cycle_stmts(G_out::CPDAG, V::Vector, stmts::Vector,sep_sets)
@@ -691,7 +695,7 @@ function orient_induced_cycle_stmts(G_out::CPDAG, V::Vector, stmts::Vector,sep_s
     (k1, k, k2) = coll[1]
     #condition (i) of lemma 4.15
     for v in setdiff(V, [k])
-        if !issubset(sep_sets[v,k], V)
+        if !issubset(sep_sets[min(v,k),max(v,k)], V)
             return G_out 
             break 
         end 
@@ -795,7 +799,8 @@ function orient_induced_cycle_stmts(G_out::CPDAG, V::Vector, stmts::Vector,sep_s
 end
 
 
-#cycle orientation function which take a Csep-dictionary as input
+### Csep dictionary cycle orientation methods 
+
 function orient_induced_cycle_dict(G_out, V, sep_dict)
     #construct the induced graph V
     indV = induced_subgraph(G_out, V)
@@ -928,6 +933,155 @@ function orient_all_cycles_dict(G_out, sep_dict)
     return G_out 
 end 
 
+### query cycle orientation methods 
+
+
+
+function orient_induced_cycle_query(G_out::CPDAG, V::Vector, G::SimpleDiGraph, C, Csep_sets, degbound)
+    
+
+    indV = induced_subgraph(G_out, V)
+    skel = skeleton(indV)
+    coll = colliders(indV) 
+    if length(coll) > 1
+        return G_out
+    end
+    (k1, k, k2) = coll[1]
+
+    for v in setdiff(V, [k])
+        for pi in collect(all_simple_paths(G_out.skeleton, v, k))
+            if !issubset(pi, V) && !any(i -> contains_subsequence(pi,i), colliders(G_out))
+                return G_out
+            end
+        end 
+    end  
+
+    neV = setdiff(unique(Iterators.flatten([Graphs.neighbors(skeleton(G_out),v) for v in V])), V)
+
+    
+    for i in setdiff(V, coll[1])
+
+        for j in setdiff(V,[i,k]) 
+            K_j = [j]
+            if Csep(G,C,K_j,i,k)
+                 if !(Set(K_j) in Csep_sets[i,k])
+                    push!(get!(Csep_sets, (i, k), Vector{Set{Any}}()), Set(K_j))
+                end     
+            end 
+        end
+    end
+
+    source_dict = Dict()
+
+    for i in V
+
+        if i in coll[1]
+
+            source_dict[i] = 1
+            continue
+        end
+
+        for K in unique(Csep_sets[i,k])
+
+            if length(intersect(V, K)) == 1
+                source_dict[i] = 1
+                break
+            end
+        end
+    end
+
+    for i in V
+        
+        if !haskey(source_dict, i)
+            source_dict[i] = 0
+        end
+    end
+
+    source = k1
+
+    for i in setdiff(V, coll[1])
+
+        (j, l) = neighbors(skel, i)
+
+        if length(V) == 4 && source_dict[i] == 1
+            source = i
+        elseif length(V) == 4 && source_dict == 0
+            break 
+
+
+
+        elseif source_dict[i] == 1 && source_dict[j] != source_dict[l]
+            source = i
+            break
+
+        elseif length(V) == 5 && source_dict[i] == 1 
+            if length(intersect(unique(Iterators.flatten((filter(K -> length(intersect(V,K)) == 1 && length(K) == minimum(length.(Csep_sets[i,k])) , unique(Csep_sets[i,k]))))),V)) == 2  
+                source = i 
+                break
+            end
+  
+        end
+    end
+
+    if source == k1
+        
+        return G_out
+    end 
+    #assume topological order for now, i.e. the source of an orientable cycle is the minimal node.
+    if source != minimum(V)
+        println(V , "is being incorrectly oriented!")
+    else
+        println("Orienting cycle " , V , " of length ", length(V))
+    end 
+
+    D = [e for e in directed_edges(G_out)]
+    E = [e for e in undirected_edges(G_out)]
+    prev_node = source
+    cur_node = neighbors(skel, prev_node)[1]
+
+    while !(cur_node == k)
+
+        push!(D, (prev_node, cur_node))
+        new_node = setdiff(neighbors(skel, cur_node), [prev_node])[1]
+        prev_node = cur_node
+        cur_node = new_node
+        
+    end
+
+
+    prev_node = source
+    cur_node = neighbors(skel, prev_node)[2]
+
+    while !(cur_node == k)
+
+        push!(D, (prev_node, cur_node))
+        new_node = setdiff(neighbors(skel, cur_node), [prev_node])[1]
+        prev_node = cur_node
+        cur_node = new_node
+        
+    end
+
+    return cp_dag(unique(D), setdiff(E, union(D, reverse.(D)))) 
+end
+
+
+
+function orient_all_cycles_query(G_out::CPDAG, G::SimpleDiGraph, C, Csep_sets, degbound)
+    for coll in colliders(G_out)
+        cycles = find_induced_cycles(G_out,coll)
+        for cycle in cycles 
+            G_out = orient_induced_cycle_query(G_out, cycle, G,C, Csep_sets, degbound)
+            if undirected_edges(G_out) == []
+                break 
+            end 
+
+        end 
+    end
+    return G_out
+
+end 
+
+
 #checks if a vector v contains a given (ordered) sequence 'seq' 
 function contains_subsequence(v, seq) 
     if length(v) <3
@@ -946,3 +1100,39 @@ function contains_subsequence(v, seq)
     return bool
 
 end
+
+#functions which apply Meek's orientation rules (https://arxiv.org/pdf/1302.4972), taken from CausalInference.jl
+# https://mschauer.github.io/CausalInference.jl/latest/
+
+#functions which convert DAGs to cp_dags and back
+function cp_dag_to_Graph(G)
+    G_out = DAG_from_edges(vcat(directed_edges(G), undirected_edges(G)))
+    for e in undirected_edges(G)
+        add_edge!(G_out, reverse(e))
+    end 
+    return G_out
+end 
+
+function Graph_to_cp_dag(G)
+    D = []
+    E = [] 
+    for e in get_edges(G)
+        i,j = e
+        if has_edge(G, j,i)
+            if !((min(i,j),max(i,j)) in E) 
+                push!(E, (min(i,j),max(i,j)))
+            end 
+        else 
+                push!(D, (i,j))
+        end 
+    end 
+    return cp_dag(D,E)
+end 
+
+#function which applies the meek rules to a DAG 
+function apply_meek(G)
+    Gvar = cp_dag_to_Graph(G)
+    Gout = meek_rules!(Gvar;rule4 = true )
+    return Graph_to_cp_dag(Gout )
+end 
+

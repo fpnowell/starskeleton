@@ -27,6 +27,7 @@ function PC_skeleton_stmts(n, degbound, stmts)
         end 
         if !separated
             push!(E, (i,j))
+            sep_sets[i,j] = []
         end 
     end 
     return unique(E), stmts, sep_sets
