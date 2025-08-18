@@ -1,6 +1,8 @@
+#functions which apply Meek's orientation rules (https://arxiv.org/pdf/1302.4972), taken from CausalInference.jl
+# https://mschauer.github.io/CausalInference.jl/latest/
 include("graphfunctions.jl")
 
-
+#functions which convert 
 function cp_dag_to_Graph(G)
     G_out = DAG_from_edges(vcat(directed_edges(G), undirected_edges(G)))
     for e in undirected_edges(G)
@@ -31,17 +33,3 @@ function apply_meek(G)
     return Graph_to_cp_dag(Gout )
 end 
 
-
-#= 
-i = 0 
-while i < 100 
-    G = parental_ER_DAG(10, 0.2)
-    C = randomly_sampled_matrix(G)
-    l = max_in_degree(G)
-    if table_entries(G,C,l)[5]
-        i += 1 
-    else 
-        return G, C, l 
-    end 
-
-end  =#

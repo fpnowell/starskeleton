@@ -27,7 +27,6 @@ function skel_from_statements(H::SimpleDiGraph, S::Vector{Any})
     return G
 end
 
-#TODO: this is closer to the pseudocode, but it's better to work with just tuples. 
 
 function skeleton_edges_from_statements(n, degbound, stmts)
     G = complete_graph(n)
@@ -96,7 +95,7 @@ function max_in_degree(G::SimpleDiGraph)
 
 end 
 
-# G, a simple directed acyclic graph
+
 # outputs all triples (i, k, j) such that the induced subgraph G[i,j,k] = i -> k <- j
 function find_colliders(G::SimpleDiGraph)
 
@@ -174,12 +173,12 @@ end
 
 
 
-###Modified Erdosz-Reinyi (from Ben's M2 code)
+###Modified Erdosz-Reinyi for generating random DAGs on n nodes
 
 function parental_ER_DAG(n, p)
     E = []
     for j in 2:n
-        P = Bernoulli(p*sqrt((n-1)/(j-1))) #this is not always well-defined. Problem?
+        P = Bernoulli(p*sqrt((n-1)/(j-1))) 
         for i in 1:j-1
             if rand(P)
                 push!(E, (i,j))
@@ -187,11 +186,10 @@ function parental_ER_DAG(n, p)
         end 
     end 
     G = DAG_from_edges(n,E)
-    degs = [indegree(G,i) for i in 1:n] #Do I need this? 
+    degs = [indegree(G,i) for i in 1:n] 
     exps = exp_indegree(n,p)
     stdvs = stdv_indegree(n,p)
     deg_bounds = vcat([(0,0)],[(maximum([0,i-2*j]), i + 2*j) for (i,j) in zip(exps, stdvs)])
-    #check for degree bounds, and connectedness 
     while !(within_deg_bounds(deg_bounds, G) && is_connected(G))
         E = []
         for j in 2:n
@@ -242,7 +240,7 @@ end
 
 
 function wtr(G::SimpleDiGraph, C)
-    #iterate through edges of G and check whether the edge is the critical path
+    #iterate through edges of G and check whether i->j is the critical i-j path
     #if this is not the case, remove 
     G_tr = SimpleDiGraph(nv(G), 0)
     Cstar = kleene_star(C)
@@ -257,7 +255,7 @@ function wtr(G::SimpleDiGraph, C)
     return G_tr, Cstar
 end 
 
-
+#generate a matrix supported on G with constant entries == 1 
 function constant_weights(G::SimpleDiGraph)
     n = Graphs.nv(G)
     C = matrix(tropical_semiring(max), [[zero(tropical_semiring(max)) for i in 1:n] for j in 1:n])
@@ -269,7 +267,7 @@ function constant_weights(G::SimpleDiGraph)
     return C
 end 
 
-
+#generate a matrix supported on G with random integer entries 
 function randomly_sampled_matrix(G::SimpleDiGraph)
     n = Graphs.nv(G)
     C = matrix(tropical_semiring(max), [[zero(tropical_semiring(max)) for i in 1:n] for j in 1:n])
@@ -356,7 +354,7 @@ function reachability_graph(G::SimpleDiGraph, K::Vector)
     return Gstar
 end 
 
-
+#check for 5 types of *-connecting paths in the critical DAG 
 function is_type_b(G::SimpleDiGraph, P::Vector, K::Vector)
     return  issubset([P[1], P[3]], Graphs.outneighbors(G,P[2])) && !(P[2] in K) 
 end 
@@ -461,7 +459,7 @@ function cp_dag(D::Vector, E::Vector)
     return CPDAG(V, [], skel, D, E, coll)
 end
 
-##Collider stuff 
+##Collider detection 
 
 # outputs all triples (i, k, j) such that the induced subgraph G[i,j,k] = i - k - j
 function get_unshielded_triples(G::SimpleGraph)
@@ -629,86 +627,7 @@ end
 
 
 
-
-##Cycle orientation functions 
-
-#this function orients the induced cycle G[V] given the full (bounded) set of Csepstatements
-#= function orient_induced_cycle(G::CPDAG, V::Vector, stmts::Vector)
-
-    indV = induced_subgraph(G, V)
-    skel = skeleton(indV)
-    coll = colliders(indV)
-
-    
-    if length(coll) > 1
-        return G
-    end
-
-    (k1, k, k2) = coll[1]
-    
-    stmts = unique(stmts)
-    sep_dict = Dict()
-
-    for i in V
-
-        if i in coll[1]
-
-            sep_dict[i] = 0
-            continue
-        else 
-            sep_dict[i] = length(unique(filter(stmt -> i in stmt && k in stmt && length(intersect(V, stmt[3])) == 1 , stmts)))
-        end 
-    end 
-    for i in V
-        
-        if !haskey(sep_dict, i)
-            sep_dict[i] = 0
-        end
-    end
-
-    if all(x -> x == 0 , keys(sep_dict))
-        source = coll[1][1] 
-    else 
-        source = findmax(sep_dict)[2]
-    end 
-
-    if source == k1
-        
-        return G
-    end 
-
-
-    D = [e for e in directed_edges(G)]
-    E = [e for e in undirected_edges(G)]
-    prev_node = source
-    cur_node = neighbors(skel, prev_node)[1]
-
-    while !(cur_node == k)
-
-        push!(D, (prev_node, cur_node))
-        new_node = setdiff(neighbors(skel, cur_node), [prev_node])[1]
-        prev_node = cur_node
-        cur_node = new_node
-        
-    end
-
-
-    prev_node = source
-    cur_node = neighbors(skel, prev_node)[2]
-
-    while !(cur_node == k)
-
-        push!(D, (prev_node, cur_node))
-        new_node = setdiff(neighbors(skel, cur_node), [prev_node])[1]
-        prev_node = cur_node
-        cur_node = new_node
-        
-    end
-
-    return cp_dag(unique(D), setdiff(E, union(D, reverse.(D))))
-end
- =#
-
+#Find all cycles containing a given collider triple 
 
 function find_cycles(G, coll)
     (k1, k, k2) = coll 
@@ -727,8 +646,6 @@ end
 
 
 function find_induced_cycles(G, coll)
-    #Currently, this filters the cycles, returning only those which are not included in a larger induced subcycle. 
-    #Is this correct? 
     all_cycles = find_cycles(G,coll)
     sorted_cycles = sort(all_cycles, by=length)
     
@@ -760,6 +677,7 @@ function orient_all_cycles_stmts(G, stmts, sep_sets)
     return G 
 end 
 
+#orient an induced cycle of a cp_dag from a full set of Csep statements. 
 function orient_induced_cycle_stmts(G_out::CPDAG, V::Vector, stmts::Vector,sep_sets)
     #construct the induced graph V
     indV = induced_subgraph(G_out, V)
@@ -877,7 +795,7 @@ function orient_induced_cycle_stmts(G_out::CPDAG, V::Vector, stmts::Vector,sep_s
 end
 
 
-#Dictionary cycle orientation functions 
+#cycle orientation function which take a Csep-dictionary as input
 function orient_induced_cycle_dict(G_out, V, sep_dict)
     #construct the induced graph V
     indV = induced_subgraph(G_out, V)
@@ -1010,7 +928,7 @@ function orient_all_cycles_dict(G_out, sep_dict)
     return G_out 
 end 
 
-#checks if a vector v contains a given (ordered) sequence seq 
+#checks if a vector v contains a given (ordered) sequence 'seq' 
 function contains_subsequence(v, seq) 
     if length(v) <3
         return false

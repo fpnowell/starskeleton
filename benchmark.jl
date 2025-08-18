@@ -1,3 +1,4 @@
+#methods for generating .csv data with results of PCstar
 using CSV
 using DataFrames
 
@@ -15,6 +16,7 @@ function table_entries(G,C,l)
 
 end 
 
+#Function which writes table_entries to a .csv file. 
 
 function save_results_to_csv(f, inputs; filename="results.csv")
     results = []
@@ -34,6 +36,7 @@ function save_results_to_csv(f, inputs; filename="results.csv")
     CSV.write(filename, df)
 end
 
+#generate .csv with table_entries data for #trials-many randomly generated parental_ER_DAGs 
 function run_benchmark(trials, n,  p, l )
     DAGs = []
     #first generate the DAGs
@@ -67,15 +70,15 @@ end
 
 #22 node DAGs 
 
-run_benchmark(10, 22, 0.07, 3)
-run_benchmark(10, 22, 0.1, 4)
-run_benchmark(10, 22, 0.15, 5)
+#run_benchmark(10, 22, 0.07, 3)
+#run_benchmark(10, 22, 0.1, 4)
+#run_benchmark(10, 22, 0.15, 5)
 
 #31 node DAGs 
 
 
-run_benchmark(1, 31, 0.05, 3)
-run_benchmark(1, 31, 0.075, 4)
-run_benchmark(1, 31, 0.1, 5)
+#run_benchmark(1, 31, 0.05, 3)
+#run_benchmark(1, 31, 0.075, 4)
+#run_benchmark(1, 31, 0.1, 5)
 
 

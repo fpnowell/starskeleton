@@ -1,3 +1,5 @@
+#Functions which generate "oracles" (i.e. complete sets of CI statements) given true some true DAG
+#separations statements are of the form [i,j,K], where K is an array
 using CausalInference 
 
 include("separation.jl")

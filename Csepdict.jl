@@ -1,4 +1,4 @@
-#markov property dictionary stuff 
+#markov property dictionary functions
 
 include("StarPC.jl")
 include("examples/examplegraphs.jl")
